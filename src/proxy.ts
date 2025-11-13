@@ -4,7 +4,7 @@ import { isPathnameStartWithLang } from 'vanns-common-modules/dist/utils/pathnam
 
 import { i18n } from '~~/i18n.config'
 
-export async function middleware(request:NextRequest){
+export async function proxy(request:NextRequest){
 
   let response = NextResponse.next()
   const requestHeaders = request.headers
