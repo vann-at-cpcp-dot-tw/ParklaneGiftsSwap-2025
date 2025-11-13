@@ -1,0 +1,9 @@
+/*
+  由於 sass 處理順序和 css 有衝突，他會把 import 調動位置，讓 import 語句被放在在字體 class name 下方
+  導致字體和 icon 都出不來，因此需要把所有 import 單獨拉出成一隻 css 檔
+  而且還要放在 public 才有效，如果放在 src/styles 裡面，即使單獨 import 進 layout.tsx 也是無效
+  這是一個被確認的 bug
+  參考連結：https://github.com/vercel/next.js/issues/32645
+*/
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");

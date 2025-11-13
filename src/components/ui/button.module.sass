@@ -1,0 +1,24 @@
+.rounded
+  @apply cursor-pointer h-[44px] px-6 rounded-full
+  &-white
+    @extend .rounded
+    @apply bg-white text-black
+    &:hover
+      @apply bg-gray-100
+
+.rounded-outline
+  background: none
+  @apply cursor-pointer h-[44px] px-6 rounded-full border-gray-700 text-gray-700
+  &:hover
+    @apply text-white bg-gray-700
+  &-white
+    @extend .rounded-outline
+    @apply border-white text-white
+    &-white
+      @extend .rounded-outline-white
+      &:hover
+        @apply bg-white text-gray-700 border-white
+    &-blue
+      @extend .rounded-outline-white
+      &:hover
+        @apply bg-blue-700 text-white border-blue-700
