@@ -7,7 +7,9 @@
     "sdev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint --cache --cache-location .next/cache/eslint/ .",
+    "lint:fix": "eslint --fix .",
+    "lint:inspect": "eslint --inspect-config"
   },
   "dependencies": {
     "@apollo/client": "^4.0.9",
@@ -39,6 +41,9 @@
     "zustand": "^4.4.6"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.1",
+    "@eslint/js": "9.39.1",
+    "@next/eslint-plugin-next": "16.0.2",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@types/negotiator": "^0.6.3",
     "@types/node": "^20",
@@ -53,6 +58,7 @@
     "sass": "~1.32.12",
     "stylelint": "^16.23.1",
     "tailwindcss": "^3.4.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "8.46.4"
   }
 }
