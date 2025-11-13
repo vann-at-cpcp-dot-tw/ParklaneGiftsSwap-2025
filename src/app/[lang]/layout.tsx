@@ -36,12 +36,16 @@ export default async function RootLayout({
   return <html>
     <body>
       <Providers commonData={commonData}>
-        <div id="app" className="flex h-screen flex-col">
-          <Header />
+        <div id="app" className="flex h-screen flex-col"
+        style={{
+          backgroundImage: 'url(/img/bg.svg)',
+          backgroundRepeat: 'repeat',
+        }}>
+          {/* <Header /> */}
           <div className="grow">
             { children }
           </div>
-          <Footer />
+          {/* <Footer /> */}
         </div>
       </Providers>
     </body>

@@ -6,6 +6,7 @@ const customColors = [
   'success',
   'error',
   'warning',
+  'red',
 ].reduce((acc, colorKey, inde)=>{
   return {
     ...acc,
