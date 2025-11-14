@@ -1,0 +1,50 @@
+// Prisma Schema for Gift Exchange Game
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 格子表：30 個固定格子
+model Grid {
+  id                   Int          @id @default(autoincrement())
+  gridNumber           Int          @unique // 1-30
+  currentGiftType      String?      // 'A' | 'B' | 'C' | 'default'
+  currentParticipantId Int?         // 當前格子內禮物的擁有者 ID
+  status               String       @default("available") // 'available' | 'locked'
+  updatedAt            DateTime     @updatedAt
+
+  submissions          Submission[]
+
+  @@index([status])
+  @@index([currentGiftType, status])
+}
+
+// 提交表：參加者記錄
+model Submission {
+  id                Int       @id @default(autoincrement())
+  participantNumber Int       // 第幾號參加者（顯示用）
+  giftType          String    // 'A' | 'B' | 'C'
+  message           String    @default("") // 20 字留言
+
+  // 聯絡資訊
+  name              String    @default("") // 姓名
+  lineId            String?   // LINE ID（可選）
+  instagram         String?   // Instagram（可選）
+
+  assignedGridId    Int       // 抽到哪一格
+  status            String    @default("pending") // 'pending' | 'completed'
+  createdAt         DateTime  @default(now())
+  completedAt       DateTime?
+  expiresAt         DateTime  // 超時時間（5 分鐘）
+
+  grid              Grid      @relation(fields: [assignedGridId], references: [id])
+
+  @@index([assignedGridId])
+  @@index([status])
+  @@index([expiresAt])
+}
