@@ -2,7 +2,7 @@
 
 const APP_BASE = process.env.NEXT_PUBLIC_APP_BASE || '/'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { twMerge } from 'tailwind-merge'
 
@@ -23,6 +23,24 @@ export default function Test(props:IProps){
   const { id, className } = props ?? {}
   const {state:gameState, setState:setGameState} = useScopeStore()
 
+  const [nextParticipantNo, setNextParticipantNo] = useState<number | null>(null)
+
+  useEffect(() => {
+    const fetchNextParticipantNo = async () => {
+      try {
+        const response = await fetch('/api/stats/participants')
+        const data = await response.json()
+        if (data.success) {
+          setNextParticipantNo(data.nextRealParticipantNo)
+        }
+      } catch (error) {
+        console.error('Failed to fetch participant number:', error)
+      }
+    }
+
+    fetchNextParticipantNo()
+  }, [])
+
   return <div className={twMerge('h-full flex flex-col', className)}>
     <div className="container relative mt-8">
       <img className="absolute left-0 top-0 z-0" src="img/welcome_deco_1.svg" alt="" />
@@ -30,7 +48,9 @@ export default function Test(props:IProps){
         <div className="text-[20px]">歡迎來到</div>
         <div className="mb-1 text-[48px] font-bold">《禮物交易<span className="text-[36px]">（交友）</span>所》</div>
         <div className="mb-1 text-[20px]">讓禮物替你發送訊號找到同頻道的人</div>
-        <div className="-mb-3 text-[64px] font-[900] text-[#DCDD9B]">NO.{padLeft('123', 5)}</div>
+        <div className="-mb-3 text-[64px] font-[900] text-[#DCDD9B]">
+          NO.{nextParticipantNo !== null ? padLeft(String(nextParticipantNo), 5) : '-----'}
+        </div>
       </div>
     </div>
     <div className="container grow bg-red text-center">
