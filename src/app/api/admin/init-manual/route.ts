@@ -76,6 +76,8 @@ export async function POST(request: Request) {
         const submission = await tx.submission.create({
           data: {
             participantNumber: i + 1,
+            isInitialGift: true, // 標記為預設禮物
+            realParticipantNo: null, // 預設禮物沒有真實參加者編號
             giftType: gift.giftType,
             message: gift.message || '',
             name: gift.name,

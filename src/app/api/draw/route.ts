@@ -61,6 +61,13 @@ export async function POST(request: Request) {
     })
     const nextParticipantNumber = (lastSubmission?.participantNumber || 0) + 1
 
+    // 5.5 取得下一個真實參加者編號（不包含預設禮物）
+    const lastRealParticipant = await prisma.submission.findFirst({
+      where: { isInitialGift: false },
+      orderBy: { realParticipantNo: 'desc' },
+    })
+    const nextRealParticipantNo = (lastRealParticipant?.realParticipantNo || 0) + 1
+
     // 6. 鎖定並創建提交記錄（事務保證原子性）
     const submission = await prisma.$transaction(async (tx) => {
       // 嘗試鎖定格子（樂觀鎖）
@@ -80,6 +87,8 @@ export async function POST(request: Request) {
       return tx.submission.create({
         data: {
           participantNumber: nextParticipantNumber,
+          isInitialGift: false, // 真實參加者
+          realParticipantNo: nextRealParticipantNo, // 真實參加者編號（1, 2, 3...）
           giftType,
           message,
           name,
@@ -104,6 +113,7 @@ export async function POST(request: Request) {
       previousSubmission: previousSubmission
         ? {
             participantNumber: previousSubmission.participantNumber,
+            realParticipantNo: previousSubmission.realParticipantNo, // 新增：真實參加者編號
             giftType: previousSubmission.giftType,
             message: previousSubmission.message,
             name: previousSubmission.name,
