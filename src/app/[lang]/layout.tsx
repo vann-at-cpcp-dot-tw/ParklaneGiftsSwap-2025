@@ -2,6 +2,7 @@ import '~~/public/external-import.css'
 
 import Script from 'next/script'
 
+import GuardWrapper from '~/app/[lang]/GuardWrapper'
 import Providers from '~/app/[lang]/providers'
 import Footer from '~/components/custom/Footer'
 import Header from '~/components/custom/Header'
@@ -50,7 +51,9 @@ export default async function RootLayout({
         <div id="app" className="flex h-screen flex-col" style={{ zIndex: 1}}>
           {/* <Header /> */}
           <div className="grow">
-            { children }
+            <GuardWrapper>
+              { children }
+            </GuardWrapper>
           </div>
           {/* <Footer /> */}
         </div>

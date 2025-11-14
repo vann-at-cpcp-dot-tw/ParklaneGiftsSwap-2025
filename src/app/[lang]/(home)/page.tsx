@@ -6,7 +6,6 @@ import { useState, useRef } from 'react'
 import html2canvas from 'html2canvas'
 
 import { ScopeStoreProvider } from './scope-store'
-import Guard from '../(game-steps)/Guard'
 
 // TypeScript 宣告：Epson ePOS SDK 全域變數
 declare global {
@@ -34,7 +33,7 @@ interface DrawResult {
 }
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState('guard')
+  const [currentStep, setCurrentStep] = useState('test')
   const [giftType, setGiftType] = useState<'A' | 'B' | 'C' | null>(null)
   const [message, setMessage] = useState('')
   const [name, setName] = useState('')
@@ -109,7 +108,7 @@ export default function Home() {
 
       alert('交換完成！')
       // 重置流程
-      setCurrentStep('guard')
+      setCurrentStep('test')
       setGiftType(null)
       setMessage('')
       setName('')
@@ -232,12 +231,7 @@ export default function Home() {
 
   return (
     <ScopeStoreProvider state={{ data: { hello: 'world' } }}>
-      {/* 步驟 1: 驗證碼 */}
-      {currentStep === 'guard' && (
-        <Guard onValidated={() => setCurrentStep('test')} />
-      )}
-
-      {/* 步驟 2: 選擇類型（簡化版心理測驗）*/}
+      {/* 步驟 1: 選擇類型（簡化版心理測驗）*/}
       {currentStep === 'test' && (
         <div style={{ padding: '20px' }}>
           <h2>選擇你的禮物類型（簡化版心理測驗）</h2>
@@ -264,7 +258,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 步驟 3: 20 字留言 */}
+      {/* 步驟 2: 20 字留言 */}
       {currentStep === 'message' && (
         <div style={{ padding: '20px' }}>
           <h2>留下 20 字留言</h2>
@@ -292,7 +286,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 步驟 4: 聯絡資訊 */}
+      {/* 步驟 3: 聯絡資訊 */}
       {currentStep === 'contact' && (
         <div style={{ padding: '20px' }}>
           <h2>填寫聯絡資訊</h2>
@@ -378,7 +372,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 步驟 5: 顯示結果 */}
+      {/* 步驟 4: 顯示結果 */}
       {currentStep === 'result' && drawResult && (
         <div style={{ padding: '20px' }}>
           <h2>抽獎結果</h2>
