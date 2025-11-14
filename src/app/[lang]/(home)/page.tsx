@@ -70,7 +70,7 @@ export default function Home() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/draw', {
+      const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ giftType, message, name, lineId, instagram }),
@@ -98,10 +98,9 @@ export default function Home() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/complete', {
-        method: 'POST',
+      const response = await fetch(`/api/submissions/${drawResult.submission.id}/complete`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submissionId: drawResult.submission.id }),
       })
 
       const data = await response.json()

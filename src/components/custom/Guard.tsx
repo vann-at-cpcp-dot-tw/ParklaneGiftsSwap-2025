@@ -17,7 +17,7 @@ export default function Guard(props: IProps) {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/validate', {
+      const response = await fetch('/api/auth/validate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

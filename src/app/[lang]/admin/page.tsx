@@ -29,8 +29,10 @@ export default function AdminPage() {
 
     setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/init-random', {
+      const response = await fetch('/api/grids/initialize', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'random' }),
       })
 
       const data = await response.json()
@@ -61,10 +63,10 @@ export default function AdminPage() {
 
     setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/init-manual', {
+      const response = await fetch('/api/grids/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gifts }),
+        body: JSON.stringify({ mode: 'manual', gifts }),
       })
 
       const data = await response.json()
@@ -89,8 +91,8 @@ export default function AdminPage() {
 
     setIsLoading(true)
     try {
-      const response = await fetch('/api/admin/reset', {
-        method: 'POST',
+      const response = await fetch('/api/grids', {
+        method: 'DELETE',
       })
 
       const data = await response.json()

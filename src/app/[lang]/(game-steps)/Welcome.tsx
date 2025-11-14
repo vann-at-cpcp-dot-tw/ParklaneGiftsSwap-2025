@@ -28,7 +28,7 @@ export default function Test(props:IProps){
   useEffect(() => {
     const fetchNextParticipantNo = async () => {
       try {
-        const response = await fetch('/api/stats/participants')
+        const response = await fetch('/api/submissions/next-number')
         const data = await response.json()
         if (data.success) {
           setNextParticipantNo(data.nextRealParticipantNo)
