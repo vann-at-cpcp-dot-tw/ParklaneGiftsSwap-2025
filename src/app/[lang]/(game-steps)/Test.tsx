@@ -98,27 +98,30 @@ export default function Test(props:IProps){
 
     // 最後一題選完
     if(questionState.currentIndex+1 >= questions.length) {
+
       const counts = { A: 0, B: 0, C: 0 }
       const basedAnswer = newAnswers[5] // 平手的話，以第六題為準
       newAnswers.forEach(answer => {
         counts[answer] += 1
       })
+      const isTie = counts.A === counts.B && counts.B === counts.C
 
       // 平手的話，以第六題為準
-      if(counts.A === counts.B && counts.B === counts.C) {
+      if( isTie ) {
+
         setGameState({
           giftType: basedAnswer,
           currentStep: 'message',
         })
+
       }else{
-        // 找出最高分的類型
+        // 否則找出最高分的類型
         const maxCount = Math.max(counts.A, counts.B, counts.C)
         const winningTypes = Object.keys(counts).filter(key => counts[key as 'A' | 'B' | 'C'] === maxCount) as Array<'A' | 'B' | 'C'>
         setGameState({
           giftTYpe: winningTypes.length === 1 ? winningTypes[0] : basedAnswer,
           currentStep: 'message',
         })
-
       }
 
     }
