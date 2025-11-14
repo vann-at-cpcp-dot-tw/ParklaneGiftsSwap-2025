@@ -1,5 +1,7 @@
 import '~~/public/external-import.css'
 
+import Script from 'next/script'
+
 import Providers from '~/app/[lang]/providers'
 import Footer from '~/components/custom/Footer'
 import Header from '~/components/custom/Header'
@@ -35,6 +37,9 @@ export default async function RootLayout({
 
   return <html>
     <body>
+      {/* 載入 Epson ePOS SDK */}
+      <Script src="/lib/epos-2.27.0.js" strategy="beforeInteractive" />
+
       <Providers commonData={commonData}>
         <div className="pointer-events-none fixed left-0 top-0 size-full"
         style={{
