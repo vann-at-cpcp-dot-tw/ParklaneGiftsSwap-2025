@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import Guard from './(game-steps)/Guard'
+import Guard from '~/components/custom/Guard'
 
 interface IProps {
   children: React.ReactNode
