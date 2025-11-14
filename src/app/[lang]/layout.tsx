@@ -2,9 +2,9 @@ import '~~/public/external-import.css'
 
 import Script from 'next/script'
 
-import GuardWrapper from '~/app/[lang]/GuardWrapper'
 import Providers from '~/app/[lang]/providers'
 import Footer from '~/components/custom/Footer'
+import GuardWrapper from '~/components/custom/GuardWrapper'
 import Header from '~/components/custom/Header'
 import { isEmpty } from '~/lib/utils'
 
