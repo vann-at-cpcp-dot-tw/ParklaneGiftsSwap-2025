@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { usePrint } from '~/hooks/usePrint'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,6 +98,10 @@ export default function AdminLogPage() {
 
   // 刪除狀態
   const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  // 列印功能
+  const { print, PrintTemplate } = usePrint()
+  const [isPrinting, setIsPrinting] = useState(false)
 
   // 載入 Grids 資料（id 和 gridNumber 對應）
   const fetchGrids = async () => {
@@ -214,6 +219,59 @@ export default function AdminLogPage() {
       alert('更新失敗：' + error.message)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // 補列印
+  const handleReprint = async (submission: Submission) => {
+    if (isPrinting) return
+
+    setIsPrinting(true)
+    try {
+      // 查詢 previousSubmission
+      const res = await fetch(`/api/admin/submissions/${submission.id}/previous`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || '查詢上一個參加者失敗')
+      }
+
+      // 若為初始禮物，提示使用者
+      if (data.isInitialGift) {
+        const confirm = window.confirm('此為初始禮物，沒有上一個參加者資料。\n是否仍要列印（上半部會顯示空白）？')
+        if (!confirm) {
+          setIsPrinting(false)
+          return
+        }
+      }
+
+      // 若查無 previousSubmission（已被刪除）
+      if (!data.isInitialGift && !data.previousSubmission) {
+        alert('上一個參加者資料已被刪除，無法列印')
+        setIsPrinting(false)
+        return
+      }
+
+      // 構建列印資料
+      const printData = {
+        previousSubmission: data.previousSubmission,
+        currentParticipant: {
+          participantNumber: submission.realParticipantNo || submission.participantNumber, // 優先使用真實編號
+          gridNumber: submission.grid.gridNumber,
+          giftType: submission.giftType,
+        },
+      }
+
+      // 列印
+      const printResult = await print(printData)
+
+      if (printResult === true) {
+        alert('列印成功！')
+      }
+    } catch (error: any) {
+      alert('補列印失敗：' + error.message)
+    } finally {
+      setIsPrinting(false)
     }
   }
 
@@ -366,6 +424,14 @@ export default function AdminLogPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleReprint(submission)}
+                          disabled={isPrinting}
+                      >
+                          {isPrinting ? '列印中...' : '補列印'}
+                      </Button>
                       <Button
                           size="sm"
                           variant="outline"
@@ -547,6 +613,9 @@ export default function AdminLogPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 列印模板（隱藏） */}
+      {PrintTemplate}
     </div>
   )
 }

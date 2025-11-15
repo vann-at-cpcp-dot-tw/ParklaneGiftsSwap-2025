@@ -32,7 +32,17 @@ export default function Result(props: IProps) {
 
     setGameState({ isLoading: true })
 
-    const printResult = await print()
+    // 構建列印資料
+    const printData = {
+      previousSubmission: gameState.drawResult.previousSubmission,
+      currentParticipant: {
+        participantNumber: gameState.drawResult.submission.participantNumber || 0,
+        gridNumber: gameState.drawResult.submission.gridNumber,
+        giftType: gameState.giftType || '',
+      },
+    }
+
+    const printResult = await print(printData)
 
     if( printResult !== true ){
       setGameState({ isLoading: false }) // 重置 loading 狀態，讓用戶可以再次嘗試
