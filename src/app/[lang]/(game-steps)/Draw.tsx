@@ -17,7 +17,7 @@ interface IProps {
 
 export default function Draw(props: IProps) {
   const { id, className } = props ?? {}
-  const { gameState, setGameState, print } = useScopeStore()
+  const { gameState, setGameState } = useScopeStore()
   const [isMatchedPreference, setIsMatchedPreference] = useState<boolean | null>(null)
 
   const handleChoice = async (choice: 'same' | 'different' | 'random') => {
@@ -80,9 +80,6 @@ export default function Draw(props: IProps) {
         setGameState({ drawResult })
       })
 
-      // const printResult = await print()
-      const printResult = print()
-
       setIsMatchedPreference(data.matchedPreference)
 
       if( data.matchedPreference === true ){
@@ -140,8 +137,8 @@ export default function Draw(props: IProps) {
               onClick={() => handleChoice('same')}
               disabled={gameState.isLoading}
           >
-            <div className="text-[32px] font-bold text-[#3E1914]">我要</div>
-            <div className="text-[20px] text-[#3E1914]">
+            <div className="text-[32px] font-bold">我要</div>
+            <div className="text-[20px]">
                 （想看看宇宙會不會安排雙重共振）
             </div>
           </button>
@@ -154,8 +151,8 @@ export default function Draw(props: IProps) {
               onClick={() => handleChoice('different')}
               disabled={gameState.isLoading}
           >
-            <div className="text-[32px] font-bold text-[#3E1914]">我不要</div>
-            <div className="text-[20px] text-[#3E1914]">
+            <div className="text-[32px] font-bold">我不要</div>
+            <div className="text-[20px]">
                 （想挑戰看看反差火花）
             </div>
           </button>
@@ -168,10 +165,10 @@ export default function Draw(props: IProps) {
               onClick={() => handleChoice('random')}
               disabled={gameState.isLoading}
           >
-            <div className="text-[32px] font-bold text-[#3E1914]">
+            <div className="text-[32px] font-bold">
                 交給宇宙選
             </div>
-            <div className="text-[20px] text-[#3E1914]">
+            <div className="text-[20px]">
                 （反正命運最會亂玩）
             </div>
           </button>

@@ -42,7 +42,8 @@ async function rebuildGridState(tx: PrismaTransaction, gridId: number) {
  * - name?: string
  * - lineId?: string
  * - instagram?: string
- * - assignedGridId?: number
+ *
+ * 注意：assignedGridId 不可修改（避免歷史錯亂）
  */
 export async function PATCH(
   request: Request,
@@ -60,7 +61,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { giftType, message, name, lineId, instagram, assignedGridId } = body
+    const { giftType, message, name, lineId, instagram } = body
 
     // 驗證欄位
     if (giftType && !['A', 'B', 'C'].includes(giftType)) {
@@ -77,17 +78,7 @@ export async function PATCH(
       )
     }
 
-    if (assignedGridId) {
-      const gridExists = await prisma.grid.findUnique({
-        where: { id: assignedGridId }
-      })
-      if (!gridExists) {
-        return NextResponse.json(
-          { error: '指定的格子不存在' },
-          { status: 404 }
-        )
-      }
-    }
+    // assignedGridId 不允許修改，即使前端傳入也忽略
 
     // 使用 transaction 更新記錄並重建 Grid 狀態
     const result = await prisma.$transaction(async (tx) => {
@@ -100,14 +91,13 @@ export async function PATCH(
         throw new Error('找不到提交記錄')
       }
 
-      // 2. 準備更新資料
+      // 2. 準備更新資料（不包含 assignedGridId）
       const updateData: any = {}
       if (giftType !== undefined) updateData.giftType = giftType
       if (message !== undefined) updateData.message = message
       if (name !== undefined) updateData.name = name
       if (lineId !== undefined) updateData.lineId = lineId || null
       if (instagram !== undefined) updateData.instagram = instagram || null
-      if (assignedGridId !== undefined) updateData.assignedGridId = assignedGridId
 
       // 3. 更新記錄
       const updatedSubmission = await tx.submission.update({
@@ -115,26 +105,12 @@ export async function PATCH(
         data: updateData
       })
 
-      // 4. 收集需要重建的 Grid IDs
-      const affectedGridIds = new Set<number>()
-
-      // 如果修改了 assignedGridId，兩個 Grid 都需要重建
-      if (assignedGridId !== undefined && oldSubmission.assignedGridId !== assignedGridId) {
-        affectedGridIds.add(oldSubmission.assignedGridId)
-        affectedGridIds.add(assignedGridId)
-      } else {
-        // 如果只修改了 giftType，只需要重建當前 Grid
-        affectedGridIds.add(updatedSubmission.assignedGridId)
-      }
-
-      // 5. 重建受影響的 Grid
-      for (const gridId of affectedGridIds) {
-        await rebuildGridState(tx, gridId)
-      }
+      // 4. 重建當前 Grid 狀態（只需重建一個格子，因為 assignedGridId 不可改）
+      await rebuildGridState(tx, updatedSubmission.assignedGridId)
 
       return {
         submission: updatedSubmission,
-        affectedGridIds: Array.from(affectedGridIds)
+        affectedGridId: updatedSubmission.assignedGridId
       }
     })
 
@@ -142,7 +118,7 @@ export async function PATCH(
       success: true,
       message: '記錄已更新',
       submission: result.submission,
-      affectedGridIds: result.affectedGridIds
+      affectedGridId: result.affectedGridId
     })
   } catch (error: any) {
     console.error('更新提交記錄失敗:', error)

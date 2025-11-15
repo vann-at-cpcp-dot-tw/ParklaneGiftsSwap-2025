@@ -186,13 +186,6 @@ export default function AdminLogPage() {
     e.preventDefault()
     if (!editingSubmission) return
 
-    // 根據 gridNumber 找到對應的 Grid.id
-    const selectedGrid = grids.find(g => g.gridNumber === parseInt(editFormData.gridNumber, 10))
-    if (!selectedGrid) {
-      alert('無效的格子編號')
-      return
-    }
-
     setIsLoading(true)
     try {
       const res = await fetch(`/api/admin/submissions/${editingSubmission.id}`, {
@@ -204,7 +197,7 @@ export default function AdminLogPage() {
           name: editFormData.name,
           lineId: editFormData.lineId || null,
           instagram: editFormData.instagram || null,
-          assignedGridId: selectedGrid.id // 使用 Grid.id
+          // assignedGridId 不再傳送，禁止修改格子編號
         })
       })
 
@@ -513,28 +506,15 @@ export default function AdminLogPage() {
                 </div>
               </div>
 
-              {/* 格子編號 */}
+              {/* 格子編號（唯讀） */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <label className="text-right font-medium">
-                    格子編號 <span className="text-red-500">*</span>
+                    格子
                 </label>
-                <Select
-                    value={editFormData.gridNumber}
-                    onValueChange={(value) =>
-                      setEditFormData(prev => ({ ...prev, gridNumber: value }))
-                    }
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="選擇格子（1-30）" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
-                      <SelectItem key={num} value={num.toString()}>
-                          格子 {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="col-span-3 text-sm font-medium text-gray-700">
+                  {editFormData.gridNumber}
+                  <span className="ml-2 text-xs text-gray-500">（不可修改）</span>
+                </div>
               </div>
             </div>
 

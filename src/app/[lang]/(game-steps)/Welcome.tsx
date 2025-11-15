@@ -55,7 +55,7 @@ export default function Test(props:IProps){
         </div>
       </div>
     </div>
-    <div className="container grow bg-red text-center">
+    <div className="container relative z-10 grow bg-red text-center">
       <div className="mb-6 text-[20px] text-[#DCDD9B]">參賽者</div>
       <div className="mb-10 text-[24px] font-bold text-white">
         地球上有 69.647 億人，要撞見對頻的人<br/>

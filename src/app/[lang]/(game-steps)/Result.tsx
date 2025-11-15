@@ -27,9 +27,16 @@ export default function Result(props: IProps) {
 
   // 完成交換
   const handleComplete = async () => {
-    if (!gameState.drawResult) return
+
+    if (!gameState.drawResult || gameState.isLoading) return
 
     setGameState({ isLoading: true })
+
+    const printResult = await print()
+
+    if( printResult !== true ){
+      return
+    }
 
     try {
       // 改為 POST 創建記錄（使用預選的格子）
@@ -59,7 +66,6 @@ export default function Result(props: IProps) {
         throw new Error(data.error || '完成交換失敗')
       }
 
-      alert('交換完成！')
       // 重置流程，回到首頁
       setGameState({
         drawResult: null,
@@ -90,33 +96,21 @@ export default function Result(props: IProps) {
           <div className="flex-none">
             <img className="relative top-[4px]" src="/img/robot.svg" alt="" />
           </div>
-          <div className="shrink pb-8 pl-12 text-[32px] font-semibold text-[#3A6848]">
-          快跟銀色小精靈<br/>
-          領取你的<DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <span className="cursor-default">秘密</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                onClick={print}
-                disabled={gameState.isLoading || !gameState.drawResult?.previousSubmission}
-                className="cursor-pointer text-[24px]"
-                >
-                重新列印
-                </DropdownMenuItem>
-                <hr className="mb-8"/>
-                <DropdownMenuItem
-                onClick={handleComplete}
-                disabled={gameState.isLoading}
-                className="mb-2 cursor-pointer text-[24px]"
-                >
-                  <span className="text-red">完成交換</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>訊息<br/>
-          再跟櫃檯人員換取鑰匙卡<br/>
-          即可前往禮物櫃<br/>
-          開啟專屬你的聖誕驚喜<br/>
+          <div className="shrink pb-12 pl-12 text-[32px] font-semibold text-[#3A6848]">
+            <div className="mb-8">
+            快跟銀色小精靈<br/>
+            領取你的訊息<br/>
+            再跟櫃檯人員換取鑰匙卡<br/>
+            即可前往禮物櫃<br/>
+            開啟專屬你的聖誕驚喜<br/>
+            </div>
+            <div className="flex justify-center">
+              <button
+              className="flex h-[64px] w-[200px] items-center justify-center rounded-full bg-[#3E1914] text-[32px] font-bold text-[#DCDD9B]"
+              onClick={handleComplete}>
+                { gameState.isLoading ? '...通訊中...' : 'GO！'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

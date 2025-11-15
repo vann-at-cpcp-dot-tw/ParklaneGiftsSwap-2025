@@ -42,7 +42,7 @@ model Submission {
   status            String    @default("pending") // 'pending' | 'completed'
   createdAt         DateTime  @default(now())
   completedAt       DateTime?
-  expiresAt         DateTime  // 超時時間（5 分鐘）
+  expiresAt         DateTime? // 超時時間（5 分鐘，可選）
 
   // 軟刪除
   isDeleted         Boolean   @default(false) // 是否已刪除
