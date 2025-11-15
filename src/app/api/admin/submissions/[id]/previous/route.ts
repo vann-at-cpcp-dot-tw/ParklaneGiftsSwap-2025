@@ -46,7 +46,15 @@ export async function GET(
       })
     }
 
-    // 3. 查詢「上一個參加者」（同一格子、比當前記錄更早完成、未刪除）
+    // 3. 檢查當前記錄是否已完成（completedAt 不可為 null）
+    if (!currentSubmission.completedAt) {
+      return NextResponse.json(
+        { error: '此記錄尚未完成，無法查詢上一個參加者' },
+        { status: 400 }
+      )
+    }
+
+    // 4. 查詢「上一個參加者」（同一格子、比當前記錄更早完成、未刪除）
     const previousSubmission = await prisma.submission.findFirst({
       where: {
         assignedGridId: currentSubmission.assignedGridId,
