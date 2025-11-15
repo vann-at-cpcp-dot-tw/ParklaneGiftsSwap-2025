@@ -2,6 +2,35 @@ import { NextResponse } from 'next/server'
 import { prisma } from '~/lib/prisma'
 
 /**
+ * 獲取所有格子資料
+ * GET /api/grids
+ */
+export async function GET() {
+  try {
+    const grids = await prisma.grid.findMany({
+      select: {
+        id: true,
+        gridNumber: true
+      },
+      orderBy: {
+        gridNumber: 'asc'
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      grids
+    })
+  } catch (error: any) {
+    console.error('獲取格子資料失敗:', error)
+    return NextResponse.json(
+      { error: '獲取格子資料失敗', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * 清空所有格子和提交記錄（危險操作）
  * DELETE /api/grids
  */
