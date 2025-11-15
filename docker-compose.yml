@@ -5,7 +5,7 @@ services:
     container_name: parklane_gifts_db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -28,7 +28,7 @@ services:
     container_name: parklane_gifts_app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/parklane_gifts
       - NEXT_PUBLIC_APP_BASE=/
