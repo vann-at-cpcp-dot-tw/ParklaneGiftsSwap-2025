@@ -17,7 +17,7 @@ interface IProps {
 
 interface IState {
   currentIndex: number
-  answers: Array<'A' | 'B' | 'C'>
+  answers: { [key: number]: 'A' | 'B' | 'C' }  // 用物件儲存，key 是題號，允許修改
 }
 
 const questions = [
@@ -77,7 +77,7 @@ export default function Test(props:IProps){
   const {gameState, setGameState} = useScopeStore()
   const [questionState, setQuestionState] = useReducer((state:IState, updateState:{})=>({...state, ...updateState}), {
     currentIndex: 0,
-    answers: [],
+    answers: {},  // 空物件
   })
 
   const currentQuestion = useMemo(()=>{
@@ -85,24 +85,27 @@ export default function Test(props:IProps){
   }, [questionState.currentIndex])
 
   function handleChoice(type: 'A' | 'B' | 'C') {
-    const newAnswers = [...questionState.answers, type]
+    // 記錄當前題目的答案（可覆蓋）
     setQuestionState({
-      answers: newAnswers
+      answers: {
+        ...questionState.answers,
+        [questionState.currentIndex]: type
+      }
     })
+    // 移除自動跳題邏輯
+  }
 
-    setTimeout(()=>{
-      setQuestionState({
-        currentIndex: questionState.currentIndex + 1
-      })
-    }, 300)
-
-    // 最後一題選完
-    if(questionState.currentIndex+1 >= questions.length) {
-
+  function handleNext() {
+    if (questionState.currentIndex < questions.length - 1) {
+      // 還有下一題
+      setQuestionState({ currentIndex: questionState.currentIndex + 1 })
+    } else {
+      // 最後一題，計算結果
+      const answerArray = Object.values(questionState.answers)
       const counts = { A: 0, B: 0, C: 0 }
-      const basedAnswer = newAnswers[5] // 並列時，以第六題為準
+      const basedAnswer = questionState.answers[5] // 第 6 題（索引 5）
 
-      newAnswers.forEach(answer => {
+      answerArray.forEach(answer => {
         counts[answer] += 1
       })
 
@@ -117,9 +120,13 @@ export default function Test(props:IProps){
         giftType: winningTypes.length === 1 ? winningTypes[0] : basedAnswer,
         currentStep: 'message',
       })
-
     }
+  }
 
+  function handlePrev() {
+    if (questionState.currentIndex > 0) {
+      setQuestionState({ currentIndex: questionState.currentIndex - 1 })
+    }
   }
 
   return <div className={twMerge('bg-red min-h-full relative flex flex-col justify-center', className)}>
@@ -135,7 +142,12 @@ export default function Test(props:IProps){
               currentQuestion.a.map((answer, answerIndex)=>(
                 <button
                 key={answerIndex}
-                className="mb-8 min-h-[144px] w-full rounded-lg bg-[#DCDD9B] p-6 text-center text-[32px] font-bold text-[#3E1914] transition-colors last:mb-0 active:bg-[#3E1914] active:text-[#DCDD9B]"
+                className={twMerge(
+                  "mb-8 min-h-[144px] w-full rounded-lg p-6 text-center text-[32px] font-bold transition-colors last:mb-0",
+                  questionState.answers[questionState.currentIndex] === answer.type
+                    ? "bg-[#3E1914] text-[#DCDD9B]"  // 已選中
+                    : "bg-[#DCDD9B] text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
+                )}
                 onClick={() => handleChoice(answer.type as 'A' | 'B' | 'C')}
                 style={{
                   boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
@@ -147,6 +159,35 @@ export default function Test(props:IProps){
           </div>
         </div>
       }
+
+      <div className="mt-8 flex justify-center gap-5">
+        <button
+          disabled={questionState.currentIndex === 0}
+          className={twMerge(
+            "flex h-[64px] w-[176px] items-center justify-center rounded-full text-[32px] font-bold transition-colors",
+            questionState.currentIndex === 0
+              ? "cursor-not-allowed bg-gray-400 text-gray-600 opacity-50"
+              : "bg-[#DCDD9B] text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
+          )}
+          onClick={handlePrev}
+        >
+          上一題
+        </button>
+
+        <button
+          disabled={questionState.answers[questionState.currentIndex] === undefined}
+          className={twMerge(
+            "flex h-[64px] w-[176px] items-center justify-center rounded-full text-[32px] font-bold transition-colors",
+            questionState.answers[questionState.currentIndex] === undefined
+              ? "cursor-not-allowed bg-gray-400 text-gray-600 opacity-50"
+              : "bg-[#DCDD9B] text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
+          )}
+          onClick={handleNext}
+        >
+          {questionState.currentIndex === questions.length - 1 ? '確認！' : '下一題'}
+        </button>
+      </div>
     </div>
+
   </div>
 }

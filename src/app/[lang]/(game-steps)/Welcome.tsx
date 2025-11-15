@@ -46,11 +46,11 @@ export default function Test(props:IProps){
   return <div className={twMerge('h-full flex flex-col', className)}>
     <div className="container relative mt-8">
       <img className="absolute left-0 top-0 z-0" src="/img/welcome_deco_1.svg" alt="" />
-      <div className="z-1 relative flex h-[518px] w-full flex-col justify-end text-center">
+      <div className="z-1 relative -mb-3 flex h-[518px] w-full flex-col justify-end text-center">
         <div className="text-[20px]">歡迎來到</div>
         <div className="mb-1 text-[48px] font-bold">《禮物交易<span className="text-[36px]">（交友）</span>所》</div>
         <div className="mb-1 text-[20px]">讓禮物替你發送訊號找到同頻道的人</div>
-        <div className="-mb-3 text-[64px] font-bold text-[#DCDD9B]">
+        <div className="text-[64px] font-bold text-[#DCDD9B]">
           # {nextParticipantNo !== null ? padLeft(String(nextParticipantNo), 5) : '-----'}
         </div>
       </div>

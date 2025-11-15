@@ -5,6 +5,12 @@ const APP_BASE = process.env.NEXT_PUBLIC_APP_BASE || '/'
 import { twMerge } from 'tailwind-merge'
 
 import { useScopeStore } from '~/app/[lang]/(home)/scope-store'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu"
 import { isEmpty } from '~/lib/utils'
 
 
@@ -17,7 +23,6 @@ interface IProps {
 export default function Result(props: IProps) {
   const { id, className } = props ?? {}
   const { gameState, setGameState, print } = useScopeStore()
-
 
 
   // 完成交換
@@ -72,85 +77,56 @@ export default function Result(props: IProps) {
     }
   }
 
-
-  return <div style={{ padding: '20px' }}>
-    <h2>抽獎結果</h2>
-    <div style={{ marginTop: '20px' }}>
-      <p>你的類型：{gameState.drawResult.submission.giftType}</p>
-      <p>抽到的格子：{gameState.drawResult.submission.gridNumber} 號</p>
-      <p>是否符合偏好：{gameState.drawResult.matchedPreference ? '是' : '否（已降級為隨機）'}</p>
-
-      <hr style={{ margin: '20px 0' }} />
-
-      <h3>上一個參加者的資訊（列印用）</h3>
-      {gameState.drawResult.previousSubmission ? (
-        <div>
-          <p>編號：{gameState.drawResult.previousSubmission.participantNumber}</p>
-          <p>姓名：{gameState.drawResult.previousSubmission.name}</p>
-          <p>類型：{gameState.drawResult.previousSubmission.giftType}</p>
-          <p>留言：{gameState.drawResult.previousSubmission.message}</p>
-          {gameState.drawResult.previousSubmission.lineId && (
-            <p>LINE ID：{gameState.drawResult.previousSubmission.lineId}</p>
-          )}
-          {gameState.drawResult.previousSubmission.instagram && (
-            <p>Instagram：{gameState.drawResult.previousSubmission.instagram}</p>
-          )}
-        </div>
-      ) : (
-        <p>這是第一個禮物（工作人員預設禮物）</p>
-      )}
-
-      <hr style={{ margin: '20px 0' }} />
-
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <button
-              onClick={handleComplete}
-              disabled={gameState.isLoading}
-              style={{
-                padding: '15px 30px',
-                fontSize: '18px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: gameState.isLoading ? 'not-allowed' : 'pointer',
-              }}
-        >
-          {gameState.isLoading ? '處理中...' : '確認完成交換'}
-        </button>
-
-        <button
-              onClick={print}
-              disabled={gameState.isLoading || !gameState.drawResult.previousSubmission}
-              style={{
-                padding: '15px 30px',
-                fontSize: '18px',
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: gameState.isLoading || !gameState.drawResult.previousSubmission ? 'not-allowed' : 'pointer',
-                opacity: !gameState.drawResult.previousSubmission ? 0.5 : 1,
-              }}
-        >
-          {gameState.isLoading ? '列印中...' : '重新列印小卡'}
-        </button>
-
-        <button
-              onClick={() => window.print()}
-              style={{
-                padding: '15px 30px',
-                fontSize: '18px',
-                backgroundColor: '#9E9E9E',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-              }}
-        >
-              瀏覽器列印
-        </button>
+  return <div className={twMerge('min-h-full flex flex-col', className)}>
+    <div className="container pt-10">
+      <div className="flex justify-center">
+        <img src="/img/title_result.svg" alt="" />
       </div>
+
+      <div className="bg-[#DCDD9B] pt-10">
+        <div className="mb-10 text-center text-[48px] font-bold text-red">恭喜你完成配對任務</div>
+
+        <div className="mx-auto flex max-w-[680px] !flex-nowrap items-end">
+          <div className="flex-none">
+            <img className="relative top-[4px]" src="/img/robot.svg" alt="" />
+          </div>
+          <div className="shrink pb-8 pl-12 text-[32px] font-semibold text-[#3A6848]">
+          快跟銀色小精靈<br/>
+          領取你的<DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <span className="cursor-default">秘密</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                onClick={print}
+                disabled={gameState.isLoading || !gameState.drawResult?.previousSubmission}
+                className="cursor-pointer text-[24px]"
+                >
+                重新列印
+                </DropdownMenuItem>
+                <hr className="mb-8"/>
+                <DropdownMenuItem
+                onClick={handleComplete}
+                disabled={gameState.isLoading}
+                className="mb-2 cursor-pointer text-[24px]"
+                >
+                  <span className="text-red">完成交換</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>訊息<br/>
+          再跟櫃檯人員換取鑰匙卡<br/>
+          即可前往禮物櫃<br/>
+          開啟專屬你的聖誕驚喜<br/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="grow"
+    style={{
+      backgroundImage: 'url(/img/bg_result_bottom.svg)',
+      backgroundRepeat: 'repeat',
+    }}>
+
     </div>
   </div>
 }

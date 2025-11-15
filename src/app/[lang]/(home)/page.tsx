@@ -279,8 +279,8 @@ export default function Home() {
               ? <div>你好，參賽者 # {padLeft(String(gameState?.drawResult?.submission?.participantNumber), 5)}</div>
               : ''
           }
-          <div>我的頻道是：{ gameState.printInfo.giftType[gameState?.drawResult?.previousSubmission?.giftType as 'A'] }</div>
-          <div>我們的共同神秘密碼是：</div>
+          <div>我的頻道是「{ gameState.printInfo.giftType[gameState?.drawResult?.previousSubmission?.giftType as 'A'] }」</div>
+          <div>我們共同的神秘密碼是</div>
         </div>
         <div className="flex items-end justify-center text-center" style={{ fontWeight: 900, lineHeight: 1 }}>
           <span className="text-[100px]">no.</span>
