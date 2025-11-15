@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 
-// 硬編碼的正確驗證碼
-const CORRECT_PASSWORD = '123456'
+// 從環境變數讀取驗證碼（必須設定，否則拒絕訪問）
+const CORRECT_PASSWORD = process.env.ADMIN_PASSWORD
+
+if (!CORRECT_PASSWORD) {
+  console.error('❌ 錯誤：未設定 ADMIN_PASSWORD 環境變數')
+}
 
 /**
  * 驗證密碼
@@ -12,6 +16,14 @@ const CORRECT_PASSWORD = '123456'
  */
 export async function POST(request: Request) {
   try {
+    // 檢查環境變數是否設定
+    if (!CORRECT_PASSWORD) {
+      return NextResponse.json(
+        { success: false, error: '伺服器配置錯誤：未設定管理員密碼' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { password } = body
 

@@ -113,8 +113,13 @@ export function usePrint() {
 
       console.log('XML Request 長度:', request.length)
 
-      // 印表機 IP 和端點
-      const printerIp = '192.168.0.123'
+      // 印表機 IP 和端點（從環境變數讀取，必須設定）
+      const printerIp = process.env.NEXT_PUBLIC_PRINTER_IP
+
+      if (!printerIp) {
+        throw new Error('伺服器配置錯誤：未設定印表機 IP（NEXT_PUBLIC_PRINTER_IP）')
+      }
+
       const url = `http://${printerIp}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
 
       // 發送到印表機

@@ -1,4 +1,5 @@
 services:
+  # PostgreSQL 資料庫
   postgres:
     image: postgres:15-alpine
     container_name: parklane_gifts_db
@@ -16,7 +17,37 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - parklane_network
+
+  # Next.js 應用程式
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parklane_gifts_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/parklane_gifts
+      - NEXT_PUBLIC_APP_BASE=/
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - NEXT_PUBLIC_PRINTER_IP=${NEXT_PUBLIC_PRINTER_IP}
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - parklane_network
+    # Windows 重開機後自動啟動
+    labels:
+      - "com.docker.compose.project=parklane_gifts"
 
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  parklane_network:
+    driver: bridge

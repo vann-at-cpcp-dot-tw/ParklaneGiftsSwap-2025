@@ -6,6 +6,7 @@ const webpack = require('webpack')
 
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone', // Docker 部署必須
   env: {},
   // assetPrefix:  process.env.NODE_ENV === "production" ?'/' :'',
   // serverRuntimeConfig: {
