@@ -43,14 +43,14 @@ export default function Guard(props: IProps) {
 
   return <main className="flex h-full flex-col">
     <div className="container flex justify-center pt-5">
-      <img src="img/guard_deco_1.svg" alt="" />
+      <img src="/img/guard_deco_1.svg" alt="" />
     </div>
 
     <form
         className="container flex grow flex-col items-center justify-center py-5"
         onSubmit={handleSubmit}
     >
-      <img className="mb-10" src="img/guard_logo.svg" alt="" />
+      <img className="mb-10" src="/img/guard_logo.svg" alt="" />
       <div className="mb-[60px] text-[36px] font-bold text-red">
           [ 禮物交易 ( 交友 ) 所 ]
       </div>
@@ -75,13 +75,13 @@ export default function Guard(props: IProps) {
       </div>
       <div className="flex justify-center">
         <button type="submit" disabled={isLoading}>
-          <img src="img/btn_go.svg" alt="" />
+          <img src="/img/btn_go.svg" alt="" />
         </button>
       </div>
     </form>
 
     <div className="container flex justify-center pb-5">
-      <img src="img/guard_deco_1.svg" alt="" />
+      <img src="/img/guard_deco_1.svg" alt="" />
     </div>
   </main>
 }

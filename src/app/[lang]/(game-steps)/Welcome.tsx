@@ -21,7 +21,7 @@ interface IState {
 export default function Test(props:IProps){
 
   const { id, className } = props ?? {}
-  const {state:gameState, setState:setGameState} = useScopeStore()
+  const {gameState, setGameState} = useScopeStore()
 
   const [nextParticipantNo, setNextParticipantNo] = useState<number | null>(null)
 
@@ -43,12 +43,12 @@ export default function Test(props:IProps){
 
   return <div className={twMerge('h-full flex flex-col', className)}>
     <div className="container relative mt-8">
-      <img className="absolute left-0 top-0 z-0" src="img/welcome_deco_1.svg" alt="" />
+      <img className="absolute left-0 top-0 z-0" src="/img/welcome_deco_1.svg" alt="" />
       <div className="z-1 relative flex h-[518px] w-full flex-col justify-end text-center">
         <div className="text-[20px]">歡迎來到</div>
         <div className="mb-1 text-[48px] font-bold">《禮物交易<span className="text-[36px]">（交友）</span>所》</div>
         <div className="mb-1 text-[20px]">讓禮物替你發送訊號找到同頻道的人</div>
-        <div className="-mb-3 text-[64px] font-[900] text-[#DCDD9B]">
+        <div className="-mb-3 text-[64px] font-bold text-[#DCDD9B]">
           NO.{nextParticipantNo !== null ? padLeft(String(nextParticipantNo), 5) : '-----'}
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function Test(props:IProps){
       </div>
       <div className="flex justify-center">
         <button
-        className="flex h-[64px] w-[144px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914]"
+        className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
         onClick={()=>{
           setGameState({
             currentStep: 'test',

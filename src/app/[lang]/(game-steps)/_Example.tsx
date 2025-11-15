@@ -21,7 +21,7 @@ interface IState {
 export default function Test(props:IProps){
 
   const { id, className } = props ?? {}
-  const {state:gameState, setState:setGameState} = useScopeStore()
+  const { gameState, setGameState } = useScopeStore()
 
   return <div className={twMerge('', className)}>
   </div>

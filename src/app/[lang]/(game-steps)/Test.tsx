@@ -74,7 +74,7 @@ const questions = [
 export default function Test(props:IProps){
 
   const { id, className } = props ?? {}
-  const {state:gameState, setState:setGameState} = useScopeStore()
+  const {gameState, setGameState} = useScopeStore()
   const [questionState, setQuestionState] = useReducer((state:IState, updateState:{})=>({...state, ...updateState}), {
     currentIndex: 0,
     answers: [],
@@ -100,49 +100,46 @@ export default function Test(props:IProps){
     if(questionState.currentIndex+1 >= questions.length) {
 
       const counts = { A: 0, B: 0, C: 0 }
-      const basedAnswer = newAnswers[5] // 平手的話，以第六題為準
+      const basedAnswer = newAnswers[5] // 並列時，以第六題為準
+
       newAnswers.forEach(answer => {
         counts[answer] += 1
       })
-      const isTie = counts.A === counts.B && counts.B === counts.C
 
-      // 平手的話，以第六題為準
-      if( isTie ) {
+      // 找出最高分
+      const maxCount = Math.max(counts.A, counts.B, counts.C)
+      const winningTypes = Object.keys(counts).filter(
+        key => counts[key as 'A' | 'B' | 'C'] === maxCount
+      ) as Array<'A' | 'B' | 'C'>
 
-        setGameState({
-          giftType: basedAnswer,
-          currentStep: 'message',
-        })
-
-      }else{
-        // 否則找出最高分的類型
-        const maxCount = Math.max(counts.A, counts.B, counts.C)
-        const winningTypes = Object.keys(counts).filter(key => counts[key as 'A' | 'B' | 'C'] === maxCount) as Array<'A' | 'B' | 'C'>
-        setGameState({
-          giftTYpe: winningTypes.length === 1 ? winningTypes[0] : basedAnswer,
-          currentStep: 'message',
-        })
-      }
+      // 如果有唯一最大值，用它；否則（並列）用 basedAnswer
+      setGameState({
+        giftType: winningTypes.length === 1 ? winningTypes[0] : basedAnswer,
+        currentStep: 'message',
+      })
 
     }
 
   }
 
   return <div className={twMerge('bg-red min-h-full relative flex flex-col justify-center', className)}>
-    <img className="pointer-events-none fixed left-0 top-1/2 z-0 w-full -translate-y-1/2" src="img/question_deco_bg.svg" alt="" />
+    <img className="pointer-events-none fixed left-0 top-1/2 z-0 w-full -translate-y-1/2" src="/img/question_deco_bg.svg" alt="" />
 
     <div className="container z-1 relative py-5">
       {
         !isEmpty(currentQuestion) && <div className="mx-auto w-full max-w-[531px]">
-          <div className="mb-3"><img src={`img/q${questionState.currentIndex+1}.svg`} alt="" /></div>
+          <div className="mb-3"><img className="h-[82px] w-auto" src={`img/q${questionState.currentIndex+1}.svg`} alt="" /></div>
           <div className="mb-10 text-[36px] font-bold text-white">{currentQuestion.q}</div>
           <div className="flex flex-col items-center">
             {
               currentQuestion.a.map((answer, answerIndex)=>(
                 <button
-              key={answerIndex}
-              className="mb-8 w-full rounded-lg bg-[#DCDD9B] p-6 text-center text-[32px] font-bold text-[#3E1914] transition-colors last:mb-0 active:bg-[#3E1914] active:text-[#DCDD9B]"
-              onClick={() => handleChoice(answer.type as 'A' | 'B' | 'C')}>
+                key={answerIndex}
+                className="mb-8 min-h-[144px] w-full rounded-lg bg-[#DCDD9B] p-6 text-center text-[32px] font-bold text-[#3E1914] transition-colors last:mb-0 active:bg-[#3E1914] active:text-[#DCDD9B]"
+                onClick={() => handleChoice(answer.type as 'A' | 'B' | 'C')}
+                style={{
+                  boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
+                }}>
                   { answer.text }
                 </button>
               ))

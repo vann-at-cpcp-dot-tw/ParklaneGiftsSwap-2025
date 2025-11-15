@@ -1,11 +1,16 @@
 // X7BJ018561
 'use client'
 
-import { useState, useRef, useReducer } from 'react'
+import { useReducer, useRef } from 'react'
 
 import html2canvas from 'html2canvas'
 
 import { ScopeStoreProvider } from './scope-store'
+import Contact  from "../(game-steps)/Contact"
+import Draw from "../(game-steps)/Draw"
+import Message from "../(game-steps)/Message"
+import MyType from "../(game-steps)/MyType"
+import Result from "../(game-steps)/Result"
 import Test from "../(game-steps)/Test"
 import Welcome from "../(game-steps)/Welcome"
 
@@ -16,16 +21,19 @@ declare global {
   }
 }
 
-interface DrawResult {
+export interface DrawResult {
+  success: boolean
+  matchedPreference: boolean
   submission: {
-    id: number
-    participantNumber: number
+    id?: number  // 抽選時尚未分配，確認時才有
+    participantNumber?: number  // 抽選時尚未分配，確認時才有
     giftType: string
     assignedGridId: number
     gridNumber: number
   }
   previousSubmission: {
     participantNumber: number
+    realParticipantNo: number | null
     giftType: string
     message: string
     name: string
@@ -35,99 +43,35 @@ interface DrawResult {
 }
 
 interface IState {
-  currentStep: 'welcome' | 'test' | 'message' | 'contact' | 'result'
+  isLoading: boolean
+  currentStep: 'welcome' | 'test' | 'message' | 'contact' | 'myType' | 'draw' | 'result'
   giftType: 'A' | 'B' | 'C' | null
+  message: '',
+  name: '',
+  lineId: '',
+  instagram: '',
+  drawResult: DrawResult | null
 }
 
+
 export default function Home() {
-  const [state, setState] = useReducer((state:IState, updateState:{})=>({...state, ...updateState}), {
+  const [gameState, setGameState] = useReducer((state:IState, updateState:{})=>({...state, ...updateState}), {
+    isLoading: false,
     currentStep: 'welcome',
     giftType: null,
+    message: '',
+    name: '',
+    lineId: '',
+    instagram: '',
+    drawResult: null,
   })
-
-  const [message, setMessage] = useState('')
-  const [name, setName] = useState('')
-  const [lineId, setLineId] = useState('')
-  const [instagram, setInstagram] = useState('')
-  const [drawResult, setDrawResult] = useState<DrawResult | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
 
   // 列印模板 ref
   const receiptRef = useRef<HTMLDivElement>(null)
 
-  // 送出留言並抽獎
-  const handleDraw = async () => {
-    if (!giftType) {
-      alert('請先選擇類型')
-      return
-    }
-
-    if (!name.trim()) {
-      alert('請填寫姓名')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('/api/submissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ giftType, message, name, lineId, instagram }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || '抽獎失敗')
-      }
-
-      setDrawResult(data)
-      setCurrentStep('result')
-    } catch (error: any) {
-      alert(error.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 完成交換
-  const handleComplete = async () => {
-    if (!drawResult) return
-
-    setIsLoading(true)
-
-    try {
-      const response = await fetch(`/api/submissions/${drawResult.submission.id}/complete`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || '完成交換失敗')
-      }
-
-      alert('交換完成！')
-      // 重置流程
-      setCurrentStep('test')
-      setGiftType(null)
-      setMessage('')
-      setName('')
-      setLineId('')
-      setInstagram('')
-      setDrawResult(null)
-    } catch (error: any) {
-      alert(error.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   // 列印圖片功能（使用官方 Epson ePOS SDK）
-  const handlePrintImage = async () => {
-    if (!drawResult?.previousSubmission || !receiptRef.current) {
+  const print = async () => {
+    if (!gameState.drawResult?.previousSubmission || !receiptRef.current) {
       alert('沒有可列印的資料')
       return
     }
@@ -138,7 +82,7 @@ export default function Home() {
       return
     }
 
-    setIsLoading(true)
+    setGameState({ isLoading: true })
 
     try {
       // 使用 html2canvas 將 HTML 轉成 canvas（保持 512px 寬度）
@@ -228,303 +172,125 @@ export default function Home() {
       console.error('列印失敗:', error)
       alert(`列印失敗：${error.message}\n\n可能原因：\n1. 印表機未連線\n2. 印表機 IP 不正確\n3. 印表機未啟用 ePOS Print\n4. SDK 未正確載入`)
     } finally {
-      setIsLoading(false)
+      setGameState({ isLoading: false })
     }
   }
 
-  return <ScopeStoreProvider state={{state, setState}}>
+
+  return <ScopeStoreProvider state={{gameState, setGameState, print}}>
     {
-      state.currentStep === 'welcome' && <Welcome />
+      gameState.currentStep === 'welcome' && <Welcome />
     }
 
     {
-      state.currentStep === 'test' && <Test />
+      gameState.currentStep === 'test' && <Test />
     }
 
-    {/* 步驟 2: 20 字留言 */}
-    {state.currentStep === 'message' && (
-      <div style={{ padding: '20px' }}>
-        <h2>留下 20 字留言</h2>
-        <p>你選擇的類型：{giftType}</p>
-        <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            maxLength={20}
-            placeholder="最多 20 字"
-            style={{
-              width: '100%',
-              height: '100px',
-              fontSize: '16px',
-              padding: '10px',
-            }}
-        />
-        <div>
-          <button
-              onClick={() => setCurrentStep('contact')}
-              style={{ marginTop: '20px', padding: '15px 30px', fontSize: '18px' }}
-          >
-              下一步
-          </button>
-        </div>
-      </div>
-    )}
+    {
+      gameState.currentStep === 'message' && <Message />
+    }
 
-    {/* 步驟 3: 聯絡資訊 */}
-    {state.currentStep === 'contact' && (
-      <div style={{ padding: '20px' }}>
-        <h2>填寫聯絡資訊</h2>
-        <p>你選擇的類型：{giftType}</p>
+    {
+      gameState.currentStep === 'contact' && <Contact />
+    }
 
-        <div style={{ marginTop: '20px' }}>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                姓名 *
-            </label>
-            <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="請輸入姓名"
-                required
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '16px',
-                }}
-            />
-          </div>
+    {
+      gameState.currentStep === 'myType' && <MyType />
+    }
 
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>
-                LINE ID
-            </label>
-            <input
-                type="text"
-                value={lineId}
-                onChange={(e) => setLineId(e.target.value)}
-                placeholder="選填"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '16px',
-                }}
-            />
-          </div>
+    {
+      gameState.currentStep === 'draw' && <Draw />
+    }
 
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>
-                Instagram
-            </label>
-            <input
-                type="text"
-                value={instagram}
-                onChange={(e) => setInstagram(e.target.value)}
-                placeholder="選填"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '16px',
-                }}
-            />
-          </div>
+    {
+      gameState.currentStep === 'result' && <Result />
+    }
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <button
-                onClick={() => setCurrentStep('message')}
-                style={{ padding: '15px 30px', fontSize: '18px' }}
-            >
-                上一步
-            </button>
-            <button
-                onClick={handleDraw}
-                disabled={isLoading}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '18px',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                }}
-            >
-              {isLoading ? '抽獎中...' : '送出並抽獎'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* 步驟 4: 顯示結果 */}
-    {state.currentStep === 'result' && drawResult && (
-      <div style={{ padding: '20px' }}>
-        <h2>抽獎結果</h2>
-        <div style={{ marginTop: '20px' }}>
-          <p>你是第 {drawResult.submission.participantNumber} 號參加者</p>
-          <p>你的類型：{drawResult.submission.giftType}</p>
-          <p>抽到的格子：{drawResult.submission.gridNumber} 號</p>
-
-          <hr style={{ margin: '20px 0' }} />
-
-          <h3>上一個參加者的資訊（列印用）</h3>
-          {drawResult.previousSubmission ? (
-            <div>
-              <p>編號：{drawResult.previousSubmission.participantNumber}</p>
-              <p>姓名：{drawResult.previousSubmission.name}</p>
-              <p>類型：{drawResult.previousSubmission.giftType}</p>
-              <p>留言：{drawResult.previousSubmission.message}</p>
-              {drawResult.previousSubmission.lineId && (
-                <p>LINE ID：{drawResult.previousSubmission.lineId}</p>
-              )}
-              {drawResult.previousSubmission.instagram && (
-                <p>Instagram：{drawResult.previousSubmission.instagram}</p>
-              )}
-            </div>
-          ) : (
-            <p>這是第一個禮物（工作人員預設禮物）</p>
-          )}
-
-          <hr style={{ margin: '20px 0' }} />
-
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-                onClick={handleComplete}
-                disabled={isLoading}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '18px',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                }}
-            >
-              {isLoading ? '處理中...' : '確認完成交換'}
-            </button>
-
-            <button
-                onClick={handlePrintImage}
-                disabled={isLoading || !drawResult.previousSubmission}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '18px',
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: isLoading || !drawResult.previousSubmission ? 'not-allowed' : 'pointer',
-                  opacity: !drawResult.previousSubmission ? 0.5 : 1,
-                }}
-            >
-              {isLoading ? '列印中...' : '列印小卡'}
-            </button>
-
-            <button
-                onClick={() => window.print()}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '18px',
-                  backgroundColor: '#9E9E9E',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                }}
-            >
-                瀏覽器列印
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {/* 隱藏的列印模板（使用 html2canvas 轉成圖片）*/}
-    {drawResult?.previousSubmission && (
-      <div
+    {/* 列印 */}
+    <div
           ref={receiptRef}
           style={{
-            position: 'absolute',
+            position: 'fixed',
             left: '-9999px',
             width: '512px',
             backgroundColor: '#ffffff',
             padding: '40px 20px',
-            fontFamily: 'Arial, sans-serif',
             color: '#000000',
           }}
-      >
-        {/* 標題裝飾 */}
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{ fontSize: '10px', letterSpacing: '2px', marginBottom: '10px' }}>
+    >
+      {/* 標題裝飾 */}
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <div style={{ fontSize: '10px', letterSpacing: '2px', marginBottom: '10px' }}>
               ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '5px' }}>
+        </div>
+        <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '5px' }}>
               禮物交換遊戲
-          </div>
-          <div style={{ fontSize: '20px', marginBottom: '10px' }}>
+        </div>
+        <div style={{ fontSize: '20px', marginBottom: '10px' }}>
               Gift Exchange Card
-          </div>
-          <div style={{ fontSize: '10px', letterSpacing: '2px' }}>
+        </div>
+        <div style={{ fontSize: '10px', letterSpacing: '2px' }}>
               ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
-          </div>
-        </div>
-
-        {/* 主要內容 */}
-        <div style={{ marginBottom: '30px' }}>
-          <div style={{
-            borderTop: '3px solid #000',
-            borderBottom: '3px solid #000',
-            padding: '20px 0',
-            marginBottom: '20px'
-          }}>
-            <div style={{ fontSize: '18px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 'bold' }}>編號</span>
-              <span style={{ fontSize: '28px', fontWeight: 'bold' }}>#{drawResult.previousSubmission.participantNumber}</span>
-            </div>
-          </div>
-
-          <div style={{ fontSize: '20px', lineHeight: '2' }}>
-            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>姓名 Name</div>
-              <div style={{ fontWeight: 'bold', fontSize: '24px' }}>{drawResult.previousSubmission.name}</div>
-            </div>
-
-            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>類型 Type</div>
-              <div style={{ fontWeight: 'bold', fontSize: '24px' }}>{drawResult.previousSubmission.giftType}</div>
-            </div>
-
-            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>留言 Message</div>
-              <div style={{ fontSize: '18px', fontStyle: 'italic' }}>{drawResult.previousSubmission.message || '（無）'}</div>
-            </div>
-
-            {drawResult.previousSubmission.lineId && (
-              <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>LINE ID</div>
-                <div style={{ fontSize: '18px' }}>{drawResult.previousSubmission.lineId}</div>
-              </div>
-            )}
-
-            {drawResult.previousSubmission.instagram && (
-              <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-                <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>Instagram</div>
-                <div style={{ fontSize: '18px' }}>@{drawResult.previousSubmission.instagram}</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 底部裝飾 */}
-        <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #000' }}>
-          <div style={{ fontSize: '18px', marginBottom: '10px' }}>
-              ♡ 感謝參與 ♡
-          </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-              Thank You for Participating
-          </div>
         </div>
       </div>
-    )}
+
+      {/* 主要內容 */}
+      <div style={{ marginBottom: '30px' }}>
+        <div
+              style={{
+                borderTop: '3px solid #000',
+                borderBottom: '3px solid #000',
+                padding: '20px 0',
+                marginBottom: '20px',
+              }}
+        >
+          <div style={{ fontSize: '18px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontWeight: 'bold' }}>格子編號</span>
+            <span style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                  #{gameState?.drawResult?.submission?.gridNumber}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ fontSize: '20px', lineHeight: '2' }}>
+          <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>姓名 Name</div>
+            <div style={{ fontWeight: 'bold', fontSize: '24px' }}>{gameState?.drawResult?.previousSubmission?.name}</div>
+          </div>
+
+          <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>類型 Type</div>
+            <div style={{ fontWeight: 'bold', fontSize: '24px' }}>{gameState?.drawResult?.previousSubmission?.giftType}</div>
+          </div>
+
+          <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>留言 Message</div>
+            <div style={{ fontSize: '18px', fontStyle: 'italic' }}>
+              {gameState?.drawResult?.previousSubmission?.message || '（無）'}
+            </div>
+          </div>
+
+          {gameState?.drawResult?.previousSubmission?.lineId && (
+            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>LINE ID</div>
+              <div style={{ fontSize: '18px' }}>{gameState.drawResult.previousSubmission.lineId}</div>
+            </div>
+          )}
+
+          {gameState?.drawResult?.previousSubmission?.instagram && (
+            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>Instagram</div>
+              <div style={{ fontSize: '18px' }}>@{gameState.drawResult.previousSubmission.instagram}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 底部裝飾 */}
+      <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #000' }}>
+        <div style={{ fontSize: '18px', marginBottom: '10px' }}>♡ 感謝參與 ♡</div>
+        <div style={{ fontSize: '12px', color: '#666' }}>Thank You for Participating</div>
+      </div>
+    </div>
   </ScopeStoreProvider>
 }

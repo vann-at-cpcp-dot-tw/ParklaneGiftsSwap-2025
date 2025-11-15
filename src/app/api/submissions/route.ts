@@ -4,7 +4,7 @@ import { prisma } from '~/lib/prisma'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { giftType, message = '', name = '', lineId = '', instagram = '' } = body
+    const { giftType, message = '', name = '', lineId = '', instagram = '', preferSameType = null, assignedGridId } = body
 
     if (!giftType || !['A', 'B', 'C'].includes(giftType)) {
       return NextResponse.json(
@@ -20,31 +20,73 @@ export async function POST(request: Request) {
       )
     }
 
-    // 1. 找可用格子（優先同類型）
-    let availableGrids = await prisma.grid.findMany({
-      where: {
-        status: 'available',
-        currentGiftType: giftType,
-      },
-    })
+    let selectedGrid
+    let matchedPreference = true
 
-    // 2. 如果同類型沒有，降級為隨機
-    if (availableGrids.length === 0) {
-      availableGrids = await prisma.grid.findMany({
-        where: { status: 'available' },
+    if (assignedGridId) {
+      // ⚠️ 前端已預選格子，直接使用（純前端抽選模式）
+      selectedGrid = await prisma.grid.findUnique({
+        where: { id: assignedGridId }
       })
-    }
 
-    if (availableGrids.length === 0) {
-      return NextResponse.json(
-        { error: '所有格子都被佔用，請稍後再試' },
-        { status: 503 }
-      )
-    }
+      if (!selectedGrid) {
+        return NextResponse.json(
+          { error: '格子不存在', retryable: true },
+          { status: 404 }
+        )
+      }
 
-    // 3. 隨機選一個
-    const selectedGrid =
-      availableGrids[Math.floor(Math.random() * availableGrids.length)]
+      if (selectedGrid.status !== 'available') {
+        return NextResponse.json(
+          { error: '格子已被佔用', retryable: true },
+          { status: 409 }
+        )
+      }
+
+      // 檢查是否符合偏好（用於記錄）
+      if (preferSameType === true && selectedGrid.currentGiftType !== giftType) {
+        matchedPreference = false
+      } else if (preferSameType === false && selectedGrid.currentGiftType === giftType) {
+        matchedPreference = false
+      }
+    } else {
+      // ⚠️ 向後兼容：保留原有隨機選擇邏輯
+      // 1. 根據用戶選擇構建查詢條件
+      let whereCondition: any = { status: 'available' }
+
+      if (preferSameType === true) {
+        // 同頻：優先同類型
+        whereCondition.currentGiftType = giftType
+      } else if (preferSameType === false) {
+        // 反差：避免同類型
+        whereCondition.currentGiftType = { not: giftType }
+      }
+      // else: 隨機（preferSameType === null），不添加類型限制
+
+      // 2. 查詢符合條件的格子
+      let availableGrids = await prisma.grid.findMany({ where: whereCondition })
+
+      // 3. 記錄是否找到符合偏好的格子
+      matchedPreference = preferSameType === null ? true : availableGrids.length > 0
+
+      // 4. 降級策略：如果沒有符合條件的，改為隨機
+      if (availableGrids.length === 0) {
+        availableGrids = await prisma.grid.findMany({
+          where: { status: 'available' }
+        })
+      }
+
+      if (availableGrids.length === 0) {
+        return NextResponse.json(
+          { error: '所有格子都被佔用，請稍後再試' },
+          { status: 503 }
+        )
+      }
+
+      // 5. 隨機選一個
+      selectedGrid =
+        availableGrids[Math.floor(Math.random() * availableGrids.length)]
+    }
 
     // 4. 取得「上一個」參加者的資料（用於列印）
     const previousSubmission = await prisma.submission.findFirst({
@@ -103,6 +145,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      matchedPreference,
       submission: {
         id: submission.id,
         participantNumber: submission.participantNumber,
