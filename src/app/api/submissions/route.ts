@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+
 import { prisma } from '~/lib/prisma'
 
 export async function POST(request: Request) {
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
 
     // 6. 鎖定並創建提交記錄（事務保證原子性）
     const submission = await prisma.$transaction(async (tx) => {
-      // 嘗試鎖定格子（樂觀鎖）
+      // 1. 嘗試鎖定格子（樂觀鎖保護併發）
       const lockedGrid = await tx.grid.updateMany({
         where: {
           id: selectedGrid.id,
@@ -125,8 +126,8 @@ export async function POST(request: Request) {
         throw new Error('格子已被佔用，請重試')
       }
 
-      // 創建提交記錄
-      return tx.submission.create({
+      // 2. 創建提交記錄（直接完成）
+      const newSubmission = await tx.submission.create({
         data: {
           participantNumber: nextParticipantNumber,
           isInitialGift: false, // 真實參加者
@@ -137,10 +138,22 @@ export async function POST(request: Request) {
           lineId: lineId || null,
           instagram: instagram || null,
           assignedGridId: selectedGrid.id,
-          status: 'pending',
-          expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 分鐘後過期
+          status: 'completed', // 單一事務直接完成
+          completedAt: new Date(), // 記錄完成時間
         },
       })
+
+      // 3. 立即解鎖格子並更新狀態（格子可被下一個參加者使用）
+      await tx.grid.update({
+        where: { id: selectedGrid.id },
+        data: {
+          status: 'available', // 解鎖格子
+          currentGiftType: newSubmission.giftType, // 更新當前禮物類型
+          currentParticipantId: newSubmission.id, // 更新當前參加者 ID
+        },
+      })
+
+      return newSubmission
     })
 
     return NextResponse.json({
@@ -155,14 +168,14 @@ export async function POST(request: Request) {
       },
       previousSubmission: previousSubmission
         ? {
-            participantNumber: previousSubmission.participantNumber,
-            realParticipantNo: previousSubmission.realParticipantNo,
-            giftType: previousSubmission.giftType,
-            message: previousSubmission.message,
-            name: previousSubmission.name,
-            lineId: previousSubmission.lineId,
-            instagram: previousSubmission.instagram,
-          }
+          participantNumber: previousSubmission.participantNumber,
+          realParticipantNo: previousSubmission.realParticipantNo,
+          giftType: previousSubmission.giftType,
+          message: previousSubmission.message,
+          name: previousSubmission.name,
+          lineId: previousSubmission.lineId,
+          instagram: previousSubmission.instagram,
+        }
         : null,
     })
   } catch (error: any) {

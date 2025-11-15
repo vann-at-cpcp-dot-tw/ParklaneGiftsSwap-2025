@@ -51,4 +51,7 @@ model Submission {
   @@index([expiresAt])
   @@index([isInitialGift])
   @@index([realParticipantNo])
+  @@index([participantNumber])                      // 優化查詢最後一個參加者編號
+  @@index([assignedGridId, status, completedAt])    // 優化查詢特定格子的最新完成記錄
+  @@index([isInitialGift, realParticipantNo])       // 優化查詢下一個真實參加者編號
 }
