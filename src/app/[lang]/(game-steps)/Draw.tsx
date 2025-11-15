@@ -123,7 +123,7 @@ export default function Draw(props: IProps) {
     <div className="container relative py-5">
       <div className="mx-auto w-full max-w-[531px]">
         <div className="mb-4">
-          <img src="/img/title_draw.svg" alt="" />
+          <img src="/img/title_gift_share.svg" alt="" />
         </div>
 
         <div className="mb-10 whitespace-nowrap text-[36px] font-bold text-white">你想和「同頻的人」交換禮物嗎？</div>
