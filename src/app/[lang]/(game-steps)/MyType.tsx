@@ -32,9 +32,10 @@ export default function MyType(props:IProps){
         </div>
         <div className="mb-10 text-[36px] font-bold text-white">我的頻道是</div>
 
-        {
-          gameState.giftType
-        }
+        <div className="mb-[120px] flex w-full items-center justify-center rounded-lg bg-[#3E1914] p-5">
+          <img className="relative top-[80px]" src={`/img/my_type_${gameState.giftType}.svg`} alt="" />
+          {/* <img className="relative top-[80px]" src={`/img/my_type_C.svg`} alt="" /> */}
+        </div>
 
         <div className="flex justify-center">
           <button

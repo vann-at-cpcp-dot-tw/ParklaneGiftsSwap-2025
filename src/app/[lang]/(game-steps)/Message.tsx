@@ -38,10 +38,18 @@ export default function Message(props:IProps){
           一句祝福的話
         </div>
 
-        <div className="mb-16">
-          <div className="mb-4">
-            <input type="text"
+        <form
+        onSubmit={(e)=>{
+          e.preventDefault()
+          setGameState({
+            currentStep: 'contact',
+          })
+        }}>
+          <div className="mb-16">
+            <div className="mb-4">
+              <input type="text"
           className="w-full rounded-lg border-none bg-[#DCDD9B] p-4 text-[32px] font-bold text-[#3E1914]"
+          required
           style={{
             boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
           }}
@@ -68,23 +76,19 @@ export default function Message(props:IProps){
               })
             }
           }}
-            />
+              />
+            </div>
+            <div className="flex justify-between text-[24px] text-white">
+              <div>限 20 個字</div>
+              <div><span>{ gameState.message.length > 20 ?'⚠️' :''}</span> { gameState.message.length } / 20</div>
+            </div>
           </div>
-          <div className="flex justify-between text-[24px] text-white">
-            <div>限 20 個字</div>
-            <div><span>{ gameState.message.length > 20 ?'⚠️' :''}</span> { gameState.message.length } / 20</div>
-          </div>
-        </div>
 
-        <div className="flex justify-center">
-          <button
-          className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
-          onClick={()=>{
-            setGameState({
-              currentStep: 'contact',
-            })
-          }}>下一步</button>
-        </div>
+          <div className="flex justify-center">
+            <button
+          className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]">下一步</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

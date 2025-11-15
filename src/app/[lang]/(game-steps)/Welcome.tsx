@@ -32,6 +32,8 @@ export default function Test(props:IProps){
         const data = await response.json()
         if (data.success) {
           setNextParticipantNo(data.nextRealParticipantNo)
+          // 同時存入全域 gameState，讓所有組件都能使用預估編號
+          setGameState({ estimatedParticipantNo: data.nextRealParticipantNo })
         }
       } catch (error) {
         console.error('Failed to fetch participant number:', error)
@@ -49,7 +51,7 @@ export default function Test(props:IProps){
         <div className="mb-1 text-[48px] font-bold">《禮物交易<span className="text-[36px]">（交友）</span>所》</div>
         <div className="mb-1 text-[20px]">讓禮物替你發送訊號找到同頻道的人</div>
         <div className="-mb-3 text-[64px] font-bold text-[#DCDD9B]">
-          NO.{nextParticipantNo !== null ? padLeft(String(nextParticipantNo), 5) : '-----'}
+          # {nextParticipantNo !== null ? padLeft(String(nextParticipantNo), 5) : '-----'}
         </div>
       </div>
     </div>

@@ -1,9 +1,11 @@
 // X7BJ018561
 'use client'
 
-import { useReducer, useRef } from 'react'
+import { useReducer, useRef, useCallback } from 'react'
 
 import html2canvas from 'html2canvas'
+
+import { isEmpty, padLeft} from '~/lib/utils'
 
 import { ScopeStoreProvider } from './scope-store'
 import Contact  from "../(game-steps)/Contact"
@@ -50,7 +52,16 @@ interface IState {
   name: '',
   lineId: '',
   instagram: '',
-  drawResult: DrawResult | null
+  estimatedParticipantNo: number | null,
+  drawResult: DrawResult | null,
+  printInfo: {
+    description: {
+      A: string | React.ReactNode
+      B: string | React.ReactNode
+      C: string | React.ReactNode
+    }
+  },
+  base64Image: string
 }
 
 
@@ -63,15 +74,45 @@ export default function Home() {
     name: '',
     lineId: '',
     instagram: '',
+    estimatedParticipantNo: null,
     drawResult: null,
+    printInfo: {
+      description: {
+        A: <div>
+          嘿！收到禮物的幸運星：）<br/>
+          不知道我們是不是同頻的人，但沒關係！<br/>
+          能相遇就是千萬分之一的奇蹟，<br/>
+          有緣分在這裡把這份禮物送給你<br/>，
+          希望它能替你的聖誕節增加一點噪音、一點笑聲、讓今年的日子更熱鬧一點！
+        </div>,
+        B: <div>
+          嘿！收到禮物的幸運星：）<br/>
+          也許我們只在這個聖誕節交會，<br/>
+          但能把心意傳遞出去，已經是很浪漫的奇蹟了。<br/>
+          我準備這份禮物的時候，<br/>
+          腦中一直想著：希望收到的人能被好好對待！
+        </div>,
+        C: <div>
+          嘿！收到禮物的幸運星：）<br/>
+          我其實沒想太多，只是剛好看到這份禮物，<br/>
+          覺得「啊，這好像會讓人開心」，就選了它。<br/>
+          有時候最美的事情就是這樣隨性發生。
+        </div>,
+      }
+    },
+    base64Image: '',
   })
 
   // 列印模板 ref
   const receiptRef = useRef<HTMLDivElement>(null)
 
+  // 使用 ref 存儲最新的 gameState，確保 print 函數總是讀取最新值
+  const gameStateRef = useRef(gameState)
+  gameStateRef.current = gameState
+
   // 列印圖片功能（使用官方 Epson ePOS SDK）
-  const print = async () => {
-    if (!gameState.drawResult?.previousSubmission || !receiptRef.current) {
+  const print = useCallback(async () => {
+    if (!gameStateRef.current.drawResult?.previousSubmission || !receiptRef.current) {
       alert('沒有可列印的資料')
       return
     }
@@ -88,17 +129,12 @@ export default function Home() {
       // 使用 html2canvas 將 HTML 轉成 canvas（保持 512px 寬度）
       const canvas = await html2canvas(receiptRef.current, {
         backgroundColor: '#ffffff',
-        scale: 1,
+        // scale: 1,
+        scale: 0.5,
         logging: false,
       })
 
-      console.log('Canvas 尺寸:', canvas.width, 'x', canvas.height)
-
-      // 檢查圖片高度限制
-      const maxHeight = 1000 // TM-T82III 最大高度限制（保守估計）
-      if (canvas.height > maxHeight) {
-        throw new Error(`圖片太高 (${canvas.height}px)，超過印表機限制 (${maxHeight}px)。請簡化內容。`)
-      }
+      // setGameState({ base64Image: canvas.toDataURL('image/png') })
 
       // 獲取 canvas 的 2D context（官方 SDK 需要）
       const context = canvas.getContext('2d')
@@ -112,11 +148,6 @@ export default function Home() {
       // ⚠️ 重要：設定 halftone 和 brightness（這是 builder 的屬性，不是參數）
       builder.halftone = builder.HALFTONE_DITHER // 0 = dithering（最快）
       builder.brightness = 1.0 // 預設亮度（範圍 0.1-10.0）
-
-      console.log('Builder 設定:', {
-        halftone: builder.halftone,
-        brightness: builder.brightness,
-      })
 
       // 添加圖片（SDK 會自動處理 dithering 和 raster 轉換）
       // ⚠️ 注意：addImage 只接受 6 個參數（context, x, y, width, height, color）
@@ -167,14 +198,16 @@ export default function Home() {
         throw new Error('列印失敗，印表機回報錯誤')
       }
 
-      alert('列印成功！')
+      // 列印成功
+      return true
+
     } catch (error: any) {
       console.error('列印失敗:', error)
       alert(`列印失敗：${error.message}\n\n可能原因：\n1. 印表機未連線\n2. 印表機 IP 不正確\n3. 印表機未啟用 ePOS Print\n4. SDK 未正確載入`)
     } finally {
       setGameState({ isLoading: false })
     }
-  }
+  }, [])  // 空依賴數組，因為通過 gameStateRef 讀取最新值
 
 
   return <ScopeStoreProvider state={{gameState, setGameState, print}}>
@@ -206,90 +239,94 @@ export default function Home() {
       gameState.currentStep === 'result' && <Result />
     }
 
-    {/* 列印 */}
+    <img src={gameState.base64Image} alt="" />
+
     <div
-          ref={receiptRef}
-          style={{
-            position: 'fixed',
-            left: '-9999px',
-            width: '512px',
-            backgroundColor: '#ffffff',
-            padding: '40px 20px',
-            color: '#000000',
-          }}
-    >
-      {/* 標題裝飾 */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <div style={{ fontSize: '10px', letterSpacing: '2px', marginBottom: '10px' }}>
-              ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
+    ref={receiptRef}
+    style={{
+      position: 'fixed',
+      left: '-9999px',
+      // width: '568px',
+      // width: '576px',
+      width: '1152px',
+      backgroundColor: '#ffffff',
+      color: '#000000',
+    }}>
+      <div className="mb-[60px] pt-10">
+        <img className="w-full" src="/img/print_title.svg" alt="" />
+      </div>
+
+      <div className="my-[100px] px-[40px] text-[50px] leading-[2]">{ gameState.printInfo.description[gameState?.drawResult?.previousSubmission?.giftType as 'A']}</div>
+
+      <div className="mb-[100px]">
+        <img className="w-full" src="/img/print_line_1.svg" alt="" />
+      </div>
+
+      <div className="mb-[80px]">
+        <div className="-mb-5 text-center text-[60px]">
+          {
+            gameState?.drawResult?.submission?.participantNumber
+              ? <div>參賽者 # {padLeft(String(gameState?.drawResult?.submission?.participantNumber), 5)}</div>
+              : ''
+          }
+          <div>我們的共同神秘密碼是</div>
         </div>
-        <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '5px' }}>
-              禮物交換遊戲
-        </div>
-        <div style={{ fontSize: '20px', marginBottom: '10px' }}>
-              Gift Exchange Card
-        </div>
-        <div style={{ fontSize: '10px', letterSpacing: '2px' }}>
-              ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦ ✦
+        <div className="flex items-end justify-center text-center" style={{ fontWeight: 900, lineHeight: 1 }}>
+          <span className="text-[100px]">no.</span>
+          <span className="text-[240px]">{ gameState?.drawResult?.submission?.gridNumber }</span>
         </div>
       </div>
 
-      {/* 主要內容 */}
-      <div style={{ marginBottom: '30px' }}>
-        <div
-              style={{
-                borderTop: '3px solid #000',
-                borderBottom: '3px solid #000',
-                padding: '20px 0',
-                marginBottom: '20px',
-              }}
-        >
-          <div style={{ fontSize: '18px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontWeight: 'bold' }}>格子編號</span>
-            <span style={{ fontSize: '28px', fontWeight: 'bold' }}>
-                  #{gameState?.drawResult?.submission?.gridNumber}
-            </span>
-          </div>
+      <div className="-mb-10 pt-[80px]">
+        <img className="w-full" src="/img/print_line_2.svg" alt="" />
+      </div>
+
+      <div className="pb-[100px]">
+        <div className="flex flex-nowrap items-start justify-center" style={{ paddingTop:'120px', marginBottom: '-250px', marginLeft: '110px' }}>
+          <img src="/img/print_deco_1.svg" alt="" style={{ width:'160px' }}/>
+          <div className="px-12 text-[60px]" style={{ marginTop:'60px' }}>想對你說：</div>
+          <img className="relative" src="/img/print_deco_2.svg" alt="" style={{ width: '190px', marginTop:'200px', right:'-60px' }}/>
         </div>
-
-        <div style={{ fontSize: '20px', lineHeight: '2' }}>
-          <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>姓名 Name</div>
-            <div style={{ fontWeight: 'bold', fontSize: '24px' }}>{gameState?.drawResult?.previousSubmission?.name}</div>
-          </div>
-
-          <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>類型 Type</div>
-            <div style={{ fontWeight: 'bold', fontSize: '24px' }}>{gameState?.drawResult?.previousSubmission?.giftType}</div>
-          </div>
-
-          <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>留言 Message</div>
-            <div style={{ fontSize: '18px', fontStyle: 'italic' }}>
-              {gameState?.drawResult?.previousSubmission?.message || '（無）'}
-            </div>
-          </div>
-
-          {gameState?.drawResult?.previousSubmission?.lineId && (
-            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>LINE ID</div>
-              <div style={{ fontSize: '18px' }}>{gameState.drawResult.previousSubmission.lineId}</div>
-            </div>
-          )}
-
-          {gameState?.drawResult?.previousSubmission?.instagram && (
-            <div style={{ marginBottom: '15px', borderBottom: '1px dashed #666', paddingBottom: '10px' }}>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '5px' }}>Instagram</div>
-              <div style={{ fontSize: '18px' }}>@{gameState.drawResult.previousSubmission.instagram}</div>
-            </div>
-          )}
+        <div className="mx-auto text-center"
+        style={{
+          fontSize: '300px',
+          lineHeight: 1,
+          fontWeight: 900,
+        }}>
+          {
+            (gameState?.drawResult?.previousSubmission?.message || '').split('').map((node, index)=>{
+              return <div key={index}>
+                {
+                  node === ' ' ? '\u00A0' : node
+                }
+              </div>
+            })
+          }
         </div>
       </div>
 
-      {/* 底部裝飾 */}
-      <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '20px', borderTop: '2px solid #000' }}>
-        <div style={{ fontSize: '18px', marginBottom: '10px' }}>♡ 感謝參與 ♡</div>
-        <div style={{ fontSize: '12px', color: '#666' }}>Thank You for Participating</div>
+      <div className="mb-[100px] pt-[120px]">
+        <img className="w-full" src="/img/print_line_1.svg" alt="" />
+      </div>
+
+      <div className="px-[40px] text-[60px]">
+        <div className="mb-[60px] text-[60px]">如果你也想繼續派對模式，來找我吧！</div>
+        <div className="flex flex-nowrap">
+          <div className="flex-none font-bold">NAME：</div>
+          <div className="flex-grow">{ gameState.drawResult?.previousSubmission?.name }</div>
+        </div>
+        <div className="flex flex-nowrap">
+          <div className="flex-none font-bold">LINE：</div>
+          <div className="flex-grow">{ gameState.drawResult?.previousSubmission?.lineId }</div>
+        </div>
+        <div className="flex flex-nowrap">
+          <div className="flex-none font-bold">IG：</div>
+          <div className="flex-grow">{ gameState.drawResult?.previousSubmission?.instagram }</div>
+        </div>
+      </div>
+
+      <div className="px-[40px] pb-[80px] pt-[120px]">
+        <img className="w-full" src="/img/print_merry.svg" alt="" />
       </div>
     </div>
   </ScopeStoreProvider>

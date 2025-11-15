@@ -2,6 +2,7 @@
 
 const APP_BASE = process.env.NEXT_PUBLIC_APP_BASE || '/'
 
+import { flushSync } from 'react-dom'
 import { twMerge } from 'tailwind-merge'
 
 import type { DrawResult } from '~/app/[lang]/(home)/page'
@@ -14,17 +15,17 @@ interface IProps {
 
 export default function Draw(props: IProps) {
   const { id, className } = props ?? {}
-  const { gameState, setGameState } = useScopeStore()
+  const { gameState, setGameState, print } = useScopeStore()
 
   const handleChoice = async (choice: 'same' | 'different' | 'random') => {
     // 验证必填字段
     if (!gameState.giftType) {
-      alert('请先完成心理测验')
+      alert('請先完成測驗')
       return
     }
 
     if (!gameState.name || gameState.name.trim() === '') {
-      alert('请填写姓名')
+      alert('請填寫姓名')
       return
     }
 
@@ -57,13 +58,13 @@ export default function Draw(props: IProps) {
         Math.floor(Math.random() * data.availableGrids.length)
       ]
 
-      // 構造 DrawResult 物件（暫時沒有 submission ID 和編號）
+      // 構造 DrawResult 物件（使用預估編號）
       const drawResult: DrawResult = {
         success: true,
         matchedPreference: data.matchedPreference,
         submission: {
           id: 0,  // 暫時沒有 ID（尚未寫入 DB）
-          participantNumber: 0,  // 暫時為 0
+          participantNumber: gameState.estimatedParticipantNo || 0,  // 使用 Welcome 取得的預估編號
           giftType: gameState.giftType,
           assignedGridId: selectedGrid.id,
           gridNumber: selectedGrid.gridNumber,
@@ -71,13 +72,20 @@ export default function Draw(props: IProps) {
         previousSubmission: selectedGrid.previousSubmission,
       }
 
-      // 更新全局状态並跳轉到 result 頁
-      setGameState({
-        drawResult,
-        currentStep: 'result',
+      // 使用 flushSync 強制同步更新 drawResult
+      flushSync(() => {
+        setGameState({ drawResult })
       })
 
-      console.log('抽選結果（尚未寫入 DB）:', drawResult)
+      // 此時 gameState.drawResult 已經更新完成，可以列印
+      const printResult = await print()
+
+      // 最後導轉到 result 頁
+      if( printResult === true ){
+        setGameState({ currentStep: 'result' })
+      }
+
+      // console.log('抽選結果（尚未寫入 DB）:', drawResult)
     } catch (error: any) {
       alert(error.message)
     } finally {
@@ -92,13 +100,11 @@ export default function Draw(props: IProps) {
           <img src="/img/title_draw.svg" alt="" />
         </div>
 
-        <div className="mb-10 text-[36px] font-bold text-white">
-            你想和「同頻的人」交換禮物嗎？
-        </div>
+        <div className="mb-10 whitespace-nowrap text-[36px] font-bold text-white">你想和「同頻的人」交換禮物嗎？</div>
 
         <div className="flex flex-col gap-6">
           <button
-              className="rounded-lg bg-[#DCDD9B] p-6 text-center transition-opacity disabled:opacity-50"
+              className="mb-6 rounded-lg bg-[#DCDD9B] p-6 text-center transition-colors active:bg-[#3E1914] active:text-[#DCDD9B]"
               style={{
                 boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
               }}
@@ -112,7 +118,7 @@ export default function Draw(props: IProps) {
           </button>
 
           <button
-              className="rounded-lg bg-[#DCDD9B] p-6 text-center transition-opacity disabled:opacity-50"
+              className="mb-6 rounded-lg bg-[#DCDD9B] p-6 text-center transition-colors active:bg-[#3E1914] active:text-[#DCDD9B]"
               style={{
                 boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
               }}
@@ -126,7 +132,7 @@ export default function Draw(props: IProps) {
           </button>
 
           <button
-              className="rounded-lg bg-[#DCDD9B] p-6 text-center transition-opacity disabled:opacity-50"
+              className="rounded-lg bg-[#DCDD9B] p-6 text-center transition-colors active:bg-[#3E1914] active:text-[#DCDD9B]"
               style={{
                 boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
               }}
@@ -142,11 +148,12 @@ export default function Draw(props: IProps) {
           </button>
         </div>
 
-        {gameState.isLoading && (
+        {
+          gameState.isLoading &&
           <div className="mt-8 text-center text-[24px] text-white">
               抽獎中...
           </div>
-        )}
+        }
       </div>
     </div>
   </div>

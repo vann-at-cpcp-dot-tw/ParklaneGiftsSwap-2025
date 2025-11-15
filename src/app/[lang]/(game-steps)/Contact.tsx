@@ -32,33 +32,46 @@ export default function Contact(props:IProps){
         </div>
         <div className="mb-10 text-[36px] font-bold text-white">悄悄留下個人聯繫座標：</div>
 
-        {
-          ['name', 'lineId', 'instagram'].map((formKey, index)=>{
-            return <div className="mb-4" key={index}>
-              <input type="text"
-            className="w-full rounded-lg border-none bg-[#DCDD9B] p-4 text-[32px] font-bold text-[#3E1914]"
-            style={{
-              boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
-            }}
-            value={gameState[formKey] || ''}
-            onChange={(e) => {
-              setGameState({
-                [formKey]: e.target.value
-              })
-            }} />
-            </div>
+        <form
+        onSubmit={(e)=>{
+          e.preventDefault()
+          setGameState({
+            currentStep: 'myType',
           })
-        }
-
-        <div className="flex justify-center">
-          <button
-          className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
-          onClick={()=>{
-            setGameState({
-              currentStep: 'myType',
+        }}>
+          {
+            ['name', 'lineId', 'instagram'].map((formKey, index)=>{
+              return <div className="mb-8" key={index}>
+                <div className="mb-3 flex items-end justify-between">
+                  <img src={`/img/form_title_${formKey}.svg`} alt="" />
+                  {
+                    formKey === 'name' && <div className="text-[24px] text-white">必填</div>
+                  }
+                </div>
+                <input type="text"
+              className="w-full rounded-lg border-none bg-[#DCDD9B] p-4 text-[32px] font-bold text-[#3E1914]"
+              style={{
+                boxShadow: '8px 8px 4px 0px rgba(0, 0, 0, 0.25)',
+              }}
+              required={formKey === 'name'}
+              value={gameState[formKey] || ''}
+              onChange={(e) => {
+                setGameState({
+                  [formKey]: e.target.value
+                })
+              }} />
+              </div>
             })
-          }}>下一步</button>
-        </div>
+          }
+
+          <div className="mb-8 text-center text-[24px] text-white">你的頻率，宇宙已經接收，快來看看你是哪一頻？</div>
+
+          <div className="flex justify-center">
+            <button
+          className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]">下一步</button>
+          </div>
+
+        </form>
       </div>
     </div>
   </div>
