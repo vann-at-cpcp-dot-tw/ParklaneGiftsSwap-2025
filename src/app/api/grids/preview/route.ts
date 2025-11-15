@@ -84,16 +84,10 @@ export async function GET(request: Request) {
     // 第二層降級：如果還是沒有，逐步減少排除數量（從 excludeLast-1 降到 0）
     let currentExcludeLast = excludeLast - 1
     while (availableGrids.length === 0 && currentExcludeLast >= 0) {
-      const reducedRecentSubmissions = currentExcludeLast > 0
-        ? await prisma.submission.findMany({
-          where: { status: 'completed', isDeleted: false },
-          orderBy: { completedAt: 'desc' },
-          take: currentExcludeLast,
-          select: { assignedGridId: true }
-        })
-        : []
-
-      const reducedExcludedGridIds = reducedRecentSubmissions.map(s => s.assignedGridId)
+      // ✅ 優化：使用已查詢的 recentSubmissions，在內存中 slice（不再重複查詢資料庫）
+      const reducedExcludedGridIds = recentSubmissions
+        .slice(0, currentExcludeLast)
+        .map(s => s.assignedGridId)
 
       availableGrids = await prisma.grid.findMany({
         where: {
