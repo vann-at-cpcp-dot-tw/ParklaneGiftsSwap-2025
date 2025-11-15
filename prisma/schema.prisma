@@ -44,6 +44,10 @@ model Submission {
   completedAt       DateTime?
   expiresAt         DateTime  // 超時時間（5 分鐘）
 
+  // 軟刪除
+  isDeleted         Boolean   @default(false) // 是否已刪除
+  deletedAt         DateTime? // 刪除時間
+
   grid              Grid      @relation(fields: [assignedGridId], references: [id])
 
   @@index([assignedGridId])
@@ -51,7 +55,9 @@ model Submission {
   @@index([expiresAt])
   @@index([isInitialGift])
   @@index([realParticipantNo])
+  @@index([isDeleted])                              // 優化軟刪除過濾
   @@index([participantNumber])                      // 優化查詢最後一個參加者編號
   @@index([assignedGridId, status, completedAt])    // 優化查詢特定格子的最新完成記錄
   @@index([isInitialGift, realParticipantNo])       // 優化查詢下一個真實參加者編號
+  @@index([assignedGridId, status, completedAt, isDeleted]) // 優化查詢特定格子的最新未刪除記錄
 }

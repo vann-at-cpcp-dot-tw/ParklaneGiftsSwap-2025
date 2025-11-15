@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 
-import GuardWrapper from '~/components/custom/GuardWrapper'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,7 +119,7 @@ export default function AdminLogPage() {
         page: pagination.page.toString(),
         pageSize: pagination.pageSize.toString(),
         search,
-        sortBy: 'realParticipantNo',
+        sortBy: 'id',  // 改用 id 排序（自增，最新的在最上面）
         sortOrder: 'desc'
       })
 
@@ -279,22 +278,21 @@ export default function AdminLogPage() {
   }
 
   return (
-    <GuardWrapper>
-      <div className="container mx-auto py-10" style={{ maxWidth: '1200px' }}>
-        <h1 className="mb-8 text-3xl font-bold">Admin Log - 提交記錄管理</h1>
+    <div className="container mx-auto py-10" style={{ maxWidth: '1200px' }}>
+      <h1 className="mb-8 text-3xl font-bold">Admin Log - 提交記錄管理</h1>
 
-        {/* 搜尋欄 */}
-        <form onSubmit={handleSearch} className="mb-6 flex gap-2">
-          <Input
+      {/* 搜尋欄 */}
+      <form onSubmit={handleSearch} className="mb-6 flex gap-2">
+        <Input
             type="text"
-            placeholder="搜尋姓名或參加者編號..."
+            placeholder="搜尋姓名或編號（真實編號 / 全局編號）..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="max-w-md"
-          />
-          <Button type="submit">搜尋</Button>
-          {search && (
-            <Button
+        />
+        <Button type="submit">搜尋</Button>
+        {search && (
+          <Button
               type="button"
               variant="outline"
               onClick={() => {
@@ -302,267 +300,273 @@ export default function AdminLogPage() {
                 setSearchInput('')
                 setPagination(prev => ({ ...prev, page: 1 }))
               }}
-            >
+          >
               清除
-            </Button>
-          )}
-        </form>
+          </Button>
+        )}
+      </form>
 
-        {/* 統計資訊 */}
-        <div className="mb-4 text-sm text-gray-600">
+      {/* 統計資訊 */}
+      <div className="mb-4 text-sm text-gray-600">
           共 {pagination.total} 筆記錄
-          {search && ` (搜尋：${search})`}
-        </div>
+        {search && ` (搜尋：${search})`}
+      </div>
 
-        {/* 表格 */}
-        <div className="overflow-x-auto rounded-lg border">
-          <Table className="bg-white">
-            <TableHeader>
+      {/* 表格 */}
+      <div className="overflow-x-auto rounded-lg border">
+        <Table className="bg-white">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">編號</TableHead>
+              <TableHead className="w-[60px]">格子</TableHead>
+              <TableHead className="w-[60px]">類型</TableHead>
+              <TableHead>姓名</TableHead>
+              <TableHead>LINE</TableHead>
+              <TableHead>IG</TableHead>
+              <TableHead className="max-w-[200px]">留言</TableHead>
+              <TableHead>完成時間</TableHead>
+              <TableHead className="w-[150px] text-right">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
               <TableRow>
-                <TableHead className="w-[80px]">編號</TableHead>
-                <TableHead className="w-[60px]">格子</TableHead>
-                <TableHead className="w-[60px]">類型</TableHead>
-                <TableHead>姓名</TableHead>
-                <TableHead>LINE</TableHead>
-                <TableHead>IG</TableHead>
-                <TableHead className="max-w-[200px]">留言</TableHead>
-                <TableHead>完成時間</TableHead>
-                <TableHead className="w-[150px] text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                     載入中...
-                  </TableCell>
-                </TableRow>
-              ) : submissions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center">
+                </TableCell>
+              </TableRow>
+            ) : submissions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center">
                     無記錄
+                </TableCell>
+              </TableRow>
+            ) : (
+              submissions.map((submission) => (
+                <TableRow key={submission.id}>
+                  <TableCell className="font-mono text-sm">
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {submission.realParticipantNo ? `#${submission.realParticipantNo}` : '初始'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        全局:{submission.participantNumber}
+                      </span>
+                    </div>
                   </TableCell>
-                </TableRow>
-              ) : (
-                submissions.map((submission) => (
-                  <TableRow key={submission.id}>
-                    <TableCell className="font-mono">
-                      #{submission.realParticipantNo || '-'}
-                    </TableCell>
-                    <TableCell className="font-mono">
-                      {submission.grid.gridNumber}
-                    </TableCell>
-                    <TableCell>{giftTypeBadge(submission.giftType)}</TableCell>
-                    <TableCell>{submission.name}</TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {submission.lineId || '-'}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {submission.instagram || '-'}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={submission.message}>
-                      {submission.message || '-'}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {formatDate(submission.completedAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
+                  <TableCell className="font-mono">
+                    {submission.grid.gridNumber}
+                  </TableCell>
+                  <TableCell>{giftTypeBadge(submission.giftType)}</TableCell>
+                  <TableCell>{submission.name}</TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {submission.lineId || '-'}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {submission.instagram || '-'}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate" title={submission.message}>
+                    {submission.message || '-'}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {formatDate(submission.completedAt)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleOpenEdit(submission)}
-                        >
+                      >
                           編輯
-                        </Button>
-                        <Button
+                      </Button>
+                      <Button
                           size="sm"
                           variant="destructive"
                           onClick={() => setDeletingId(submission.id)}
-                        >
+                      >
                           刪除
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-        {/* 分頁 */}
-        {pagination.totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+      {/* 分頁 */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
               第 {pagination.page} / {pagination.totalPages} 頁
-            </div>
-            <div className="flex gap-2">
-              <Button
+          </div>
+          <div className="flex gap-2">
+            <Button
                 variant="outline"
                 disabled={pagination.page === 1}
                 onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-              >
+            >
                 上一頁
-              </Button>
-              <Button
+            </Button>
+            <Button
                 variant="outline"
                 disabled={pagination.page === pagination.totalPages}
                 onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-              >
+            >
                 下一頁
-              </Button>
-            </div>
+            </Button>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* 編輯 Dialog */}
-        <Dialog open={!!editingSubmission} onOpenChange={(open) => !open && handleCloseEdit()}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
+      {/* 編輯 Dialog */}
+      <Dialog open={!!editingSubmission} onOpenChange={(open) => !open && handleCloseEdit()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
                 編輯記錄 #{editingSubmission?.realParticipantNo || editingSubmission?.id}
-              </DialogTitle>
-              <DialogDescription>
+            </DialogTitle>
+            <DialogDescription>
                 修改後將自動重建相關格子的狀態
-              </DialogDescription>
-            </DialogHeader>
+            </DialogDescription>
+          </DialogHeader>
 
-            <form onSubmit={handleSubmitEdit}>
-              <div className="grid gap-4 py-4">
-                {/* 禮物類型 */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label className="text-right font-medium">
+          <form onSubmit={handleSubmitEdit}>
+            <div className="grid gap-4 py-4">
+              {/* 禮物類型 */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">
                     禮物類型 <span className="text-red-500">*</span>
-                  </label>
-                  <Select
+                </label>
+                <Select
                     value={editFormData.giftType}
                     onValueChange={(value) =>
                       setEditFormData(prev => ({ ...prev, giftType: value }))
                     }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A">A - 派對</SelectItem>
-                      <SelectItem value="B">B - 暖心</SelectItem>
-                      <SelectItem value="C">C - 隨性</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A - 派對</SelectItem>
+                    <SelectItem value="B">B - 暖心</SelectItem>
+                    <SelectItem value="C">C - 隨性</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* 姓名 */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label className="text-right font-medium">
+              {/* 姓名 */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">
                     姓名 <span className="text-red-500">*</span>
-                  </label>
-                  <Input
+                </label>
+                <Input
                     className="col-span-3"
                     value={editFormData.name}
                     onChange={(e) =>
                       setEditFormData(prev => ({ ...prev, name: e.target.value }))
                     }
                     required
-                  />
-                </div>
+                />
+              </div>
 
-                {/* LINE ID */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label className="text-right font-medium">LINE ID</label>
-                  <Input
+              {/* LINE ID */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">LINE ID</label>
+                <Input
                     className="col-span-3"
                     value={editFormData.lineId}
                     onChange={(e) =>
                       setEditFormData(prev => ({ ...prev, lineId: e.target.value }))
                     }
-                  />
-                </div>
+                />
+              </div>
 
-                {/* Instagram */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label className="text-right font-medium">Instagram</label>
-                  <Input
+              {/* Instagram */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">Instagram</label>
+                <Input
                     className="col-span-3"
                     value={editFormData.instagram}
                     onChange={(e) =>
                       setEditFormData(prev => ({ ...prev, instagram: e.target.value }))
                     }
-                  />
-                </div>
+                />
+              </div>
 
-                {/* 留言 */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label className="text-right font-medium">留言</label>
-                  <div className="col-span-3">
-                    <Textarea
+              {/* 留言 */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">留言</label>
+                <div className="col-span-3">
+                  <Textarea
                       value={editFormData.message}
                       onChange={(e) =>
                         setEditFormData(prev => ({ ...prev, message: e.target.value.slice(0, 20) }))
                       }
                       maxLength={20}
-                    />
-                    <div className="mt-1 text-right text-xs text-gray-500">
-                      {editFormData.message.length} / 20 字
-                    </div>
+                  />
+                  <div className="mt-1 text-right text-xs text-gray-500">
+                    {editFormData.message.length} / 20 字
                   </div>
                 </div>
+              </div>
 
-                {/* 格子編號 */}
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label className="text-right font-medium">
+              {/* 格子編號 */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">
                     格子編號 <span className="text-red-500">*</span>
-                  </label>
-                  <Select
+                </label>
+                <Select
                     value={editFormData.gridNumber}
                     onValueChange={(value) =>
                       setEditFormData(prev => ({ ...prev, gridNumber: value }))
                     }
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="選擇格子（1-30）" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
-                        <SelectItem key={num} value={num.toString()}>
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="選擇格子（1-30）" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
+                      <SelectItem key={num} value={num.toString()}>
                           格子 {num}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCloseEdit}>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCloseEdit}>
                   取消
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? '儲存中...' : '儲存'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? '儲存中...' : '儲存'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-        {/* 刪除確認 Dialog */}
-        <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>確認刪除？</AlertDialogTitle>
-              <AlertDialogDescription>
+      {/* 刪除確認 Dialog */}
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>確認刪除？</AlertDialogTitle>
+            <AlertDialogDescription>
                 刪除後將自動重建相關格子的狀態。此操作無法復原。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} disabled={isLoading}>
-                {isLoading ? '刪除中...' : '刪除'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </GuardWrapper>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={isLoading}>
+              {isLoading ? '刪除中...' : '刪除'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   )
 }

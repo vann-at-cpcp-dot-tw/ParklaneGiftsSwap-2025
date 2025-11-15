@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       where: {
         assignedGridId: selectedGrid.id,
         status: 'completed',
+        isDeleted: false, // 排除軟刪除的記錄
       },
       orderBy: { completedAt: 'desc' },
     })

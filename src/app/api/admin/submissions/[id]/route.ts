@@ -12,11 +12,12 @@ type PrismaTransaction = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' |
  * 根據該 Grid 最新的 completed submission 更新 currentGiftType 和 currentParticipantId
  */
 async function rebuildGridState(tx: PrismaTransaction, gridId: number) {
-  // 查詢該 Grid 的最新 completed submission
+  // 查詢該 Grid 的最新 completed submission（排除軟刪除）
   const latestSubmission = await tx.submission.findFirst({
     where: {
       assignedGridId: gridId,
-      status: 'completed'
+      status: 'completed',
+      isDeleted: false // 排除軟刪除的記錄
     },
     orderBy: { completedAt: 'desc' }
   })
@@ -45,10 +46,11 @@ async function rebuildGridState(tx: PrismaTransaction, gridId: number) {
  */
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const submissionId = parseInt(params.id, 10)
+    const { id } = await params
+    const submissionId = parseInt(id, 10)
 
     if (isNaN(submissionId)) {
       return NextResponse.json(
@@ -160,17 +162,19 @@ export async function PATCH(
 }
 
 /**
- * 刪除提交記錄（Admin）
+ * 軟刪除提交記錄（Admin）
  * DELETE /api/admin/submissions/[id]
  *
+ * 標記為已刪除（isDeleted=true），編號會自動跳號
  * 刪除後自動重建相關 Grid 的狀態
  */
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const submissionId = parseInt(params.id, 10)
+    const { id } = await params
+    const submissionId = parseInt(id, 10)
 
     if (isNaN(submissionId)) {
       return NextResponse.json(
@@ -179,7 +183,7 @@ export async function DELETE(
       )
     }
 
-    // 使用 transaction 刪除記錄並重建 Grid 狀態
+    // 使用 transaction 軟刪除記錄並重建 Grid 狀態
     const result = await prisma.$transaction(async (tx) => {
       // 1. 獲取要刪除的記錄
       const submission = await tx.submission.findUnique({
@@ -190,18 +194,26 @@ export async function DELETE(
         throw new Error('找不到提交記錄')
       }
 
+      if (submission.isDeleted) {
+        throw new Error('此記錄已經被刪除')
+      }
+
       const affectedGridId = submission.assignedGridId
 
-      // 2. 刪除記錄
-      await tx.submission.delete({
-        where: { id: submissionId }
+      // 2. 軟刪除記錄（標記為已刪除，而非真正刪除）
+      const deletedSubmission = await tx.submission.update({
+        where: { id: submissionId },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date()
+        }
       })
 
-      // 3. 重建相關 Grid 狀態
+      // 3. 重建相關 Grid 狀態（會自動找到「上一筆未刪除」的記錄）
       await rebuildGridState(tx, affectedGridId)
 
       return {
-        deletedSubmission: submission,
+        deletedSubmission,
         affectedGridId
       }
     })

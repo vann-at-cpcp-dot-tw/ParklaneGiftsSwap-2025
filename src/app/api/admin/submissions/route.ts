@@ -37,17 +37,18 @@ export async function GET(request: Request) {
 
     // 構建搜尋條件
     const searchNumber = parseInt(search, 10)
-    const where: any = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            ...(isNaN(searchNumber) ? [] : [
-              { realParticipantNo: searchNumber },
-              { participantNumber: searchNumber }
-            ])
-          ]
-        }
-      : {}
+    const where: any = {
+      isDeleted: false, // 只顯示未刪除的記錄
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          ...(isNaN(searchNumber) ? [] : [
+            { realParticipantNo: searchNumber },
+            { participantNumber: searchNumber }  // 恢復全局編號搜尋（用於找初始禮物）
+          ])
+        ]
+      } : {})
+    }
 
     // 查詢總筆數
     const total = await prisma.submission.count({ where })
