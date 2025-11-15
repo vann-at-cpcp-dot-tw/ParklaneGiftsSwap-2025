@@ -124,16 +124,18 @@ export default function Home() {
   const print = useCallback(async () => {
     if (!gameStateRef.current.drawResult?.previousSubmission || !receiptRef.current) {
       alert('沒有可列印的資料')
+      setGameState({ isLoading: false }) // 重置 loading 狀態
       return
     }
 
     // 檢查 SDK 是否載入
     if (typeof window.epson === 'undefined') {
       alert('Epson SDK 尚未載入，請重新整理頁面')
+      setGameState({ isLoading: false }) // 重置 loading 狀態
       return
     }
 
-    setGameState({ isLoading: true })
+    // isLoading 已在 Result.tsx 的 handleComplete 中設置，這裡不需要重複設置
 
     try {
       // 使用 html2canvas 將 HTML 轉成 canvas（保持 512px 寬度）

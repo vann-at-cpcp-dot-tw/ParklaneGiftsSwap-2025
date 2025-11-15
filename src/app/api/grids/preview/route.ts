@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const giftType = searchParams.get('giftType')
     const preferSameTypeParam = searchParams.get('preferSameType')
+    const excludeLastParam = searchParams.get('excludeLast')
 
     if (!giftType || !['A', 'B', 'C'].includes(giftType)) {
       return NextResponse.json(
@@ -21,8 +22,38 @@ export async function GET(request: Request) {
         preferSameTypeParam === 'false' ? false :
           null
 
-    // 1. 根據用戶選擇構建查詢條件
-    let whereCondition: any = { status: 'available' }
+    // 解析 excludeLast 參數（預設 1，可設為 0 關閉排除機制）
+    const excludeLast = excludeLastParam ? parseInt(excludeLastParam, 10) : 1
+
+    // 驗證 excludeLast 範圍
+    if (isNaN(excludeLast) || excludeLast < 0 || excludeLast > 30) {
+      return NextResponse.json(
+        { error: 'excludeLast 必須在 0-30 之間' },
+        { status: 400 }
+      )
+    }
+
+    // 0. 查詢倒數 X 個被抽中的格子（用於防止短期內重複抽到）
+    const recentSubmissions = excludeLast > 0
+      ? await prisma.submission.findMany({
+        where: {
+          status: 'completed',
+          isDeleted: false
+        },
+        orderBy: { completedAt: 'desc' },
+        take: excludeLast,
+        select: { assignedGridId: true }
+      })
+      : []
+
+    const excludedGridIds = recentSubmissions.map(s => s.assignedGridId)
+
+    // 1. 根據用戶選擇構建查詢條件（加入排除倒數 X 個格子）
+    let whereCondition: any = {
+      status: 'available',
+      // 排除倒數 X 個被抽中的格子（如果有的話）
+      ...(excludedGridIds.length > 0 ? { id: { notIn: excludedGridIds } } : {})
+    }
 
     if (preferSameType === true) {
       // 同頻：優先同類型
@@ -39,7 +70,42 @@ export async function GET(request: Request) {
     // 3. 記錄是否找到符合偏好的格子
     const matchedPreference = preferSameType === null ? true : availableGrids.length > 0
 
-    // 4. 降級策略：如果沒有符合條件的，改為隨機
+    // 4. 智能降級策略（三層）
+    // 第一層降級：如果沒有符合「類型偏好 + 排除倒數 X 個」，改為「只排除倒數 X 個（不管類型）」
+    if (availableGrids.length === 0) {
+      availableGrids = await prisma.grid.findMany({
+        where: {
+          status: 'available',
+          ...(excludedGridIds.length > 0 ? { id: { notIn: excludedGridIds } } : {})
+        }
+      })
+    }
+
+    // 第二層降級：如果還是沒有，逐步減少排除數量（從 excludeLast-1 降到 0）
+    let currentExcludeLast = excludeLast - 1
+    while (availableGrids.length === 0 && currentExcludeLast >= 0) {
+      const reducedRecentSubmissions = currentExcludeLast > 0
+        ? await prisma.submission.findMany({
+          where: { status: 'completed', isDeleted: false },
+          orderBy: { completedAt: 'desc' },
+          take: currentExcludeLast,
+          select: { assignedGridId: true }
+        })
+        : []
+
+      const reducedExcludedGridIds = reducedRecentSubmissions.map(s => s.assignedGridId)
+
+      availableGrids = await prisma.grid.findMany({
+        where: {
+          status: 'available',
+          ...(reducedExcludedGridIds.length > 0 ? { id: { notIn: reducedExcludedGridIds } } : {})
+        }
+      })
+
+      currentExcludeLast--
+    }
+
+    // 第三層降級：如果還是沒有（所有格子都被佔用），返回錯誤
     if (availableGrids.length === 0) {
       availableGrids = await prisma.grid.findMany({
         where: { status: 'available' }
@@ -60,6 +126,7 @@ export async function GET(request: Request) {
           where: {
             assignedGridId: grid.id,
             status: 'completed',
+            isDeleted: false, // 排除軟刪除的記錄
           },
           orderBy: { completedAt: 'desc' },
         })

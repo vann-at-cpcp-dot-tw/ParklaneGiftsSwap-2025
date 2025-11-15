@@ -35,6 +35,7 @@ export default function Result(props: IProps) {
     const printResult = await print()
 
     if( printResult !== true ){
+      setGameState({ isLoading: false }) // 重置 loading 狀態，讓用戶可以再次嘗試
       return
     }
 

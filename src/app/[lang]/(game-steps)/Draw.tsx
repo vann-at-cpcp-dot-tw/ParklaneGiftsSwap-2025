@@ -43,7 +43,7 @@ export default function Draw(props: IProps) {
 
       // 呼叫 GET API 獲取可用格子列表（不寫入 DB）
       const response = await fetch(
-        `/api/grids/preview?giftType=${gameState.giftType}&preferSameType=${preferSameType}`
+        `/api/grids/preview?giftType=${gameState.giftType}&preferSameType=${preferSameType}&excludeLast=2`
       )
 
       const data = await response.json()
