@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+
 import { prisma } from '~/lib/prisma'
 
 export async function GET(request: Request) {
@@ -69,14 +70,14 @@ export async function GET(request: Request) {
           currentGiftType: grid.currentGiftType,
           previousSubmission: previousSubmission
             ? {
-                participantNumber: previousSubmission.participantNumber,
-                realParticipantNo: previousSubmission.realParticipantNo,
-                giftType: previousSubmission.giftType,
-                message: previousSubmission.message,
-                name: previousSubmission.name,
-                lineId: previousSubmission.lineId,
-                instagram: previousSubmission.instagram,
-              }
+              participantNumber: previousSubmission.participantNumber,
+              realParticipantNo: previousSubmission.realParticipantNo,
+              giftType: previousSubmission.giftType,
+              message: previousSubmission.message,
+              name: previousSubmission.name,
+              lineId: previousSubmission.lineId,
+              instagram: previousSubmission.instagram,
+            }
             : null,
         }
       })

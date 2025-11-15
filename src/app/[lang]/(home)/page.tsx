@@ -59,6 +59,11 @@ interface IState {
       A: string | React.ReactNode
       B: string | React.ReactNode
       C: string | React.ReactNode
+    },
+    giftType: {
+      A: string | React.ReactNode
+      B: string | React.ReactNode
+      C: string | React.ReactNode
     }
   },
   base64Image: string
@@ -98,6 +103,11 @@ export default function Home() {
           覺得「啊，這好像會讓人開心」，就選了它。<br/>
           有時候最美的事情就是這樣隨性發生。
         </div>,
+      },
+      giftType: {
+        A: '派對 A 頻',
+        B: '溫心 B 頻',
+        C: '隨性 C 頻',
       }
     },
     base64Image: '',
@@ -266,10 +276,11 @@ export default function Home() {
         <div className="-mb-5 text-center text-[60px]">
           {
             gameState?.drawResult?.submission?.participantNumber
-              ? <div>參賽者 # {padLeft(String(gameState?.drawResult?.submission?.participantNumber), 5)}</div>
+              ? <div>你好，參賽者 # {padLeft(String(gameState?.drawResult?.submission?.participantNumber), 5)}</div>
               : ''
           }
-          <div>我們的共同神秘密碼是</div>
+          <div>我的頻道是：{ gameState.printInfo.giftType[gameState?.drawResult?.previousSubmission?.giftType as 'A'] }</div>
+          <div>我們的共同神秘密碼是：</div>
         </div>
         <div className="flex items-end justify-center text-center" style={{ fontWeight: 900, lineHeight: 1 }}>
           <span className="text-[100px]">no.</span>

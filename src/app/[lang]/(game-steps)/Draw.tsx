@@ -2,6 +2,8 @@
 
 const APP_BASE = process.env.NEXT_PUBLIC_APP_BASE || '/'
 
+import { useState } from 'react'
+
 import { flushSync } from 'react-dom'
 import { twMerge } from 'tailwind-merge'
 
@@ -16,6 +18,7 @@ interface IProps {
 export default function Draw(props: IProps) {
   const { id, className } = props ?? {}
   const { gameState, setGameState, print } = useScopeStore()
+  const [isMatchedPreference, setIsMatchedPreference] = useState<boolean | null>(null)
 
   const handleChoice = async (choice: 'same' | 'different' | 'random') => {
     // 验证必填字段
@@ -53,7 +56,7 @@ export default function Draw(props: IProps) {
         throw new Error('沒有可用的格子')
       }
 
-      // 前端隨機選一個格子
+      // 從符合用戶偏好的格子中隨機選一個
       const selectedGrid = data.availableGrids[
         Math.floor(Math.random() * data.availableGrids.length)
       ]
@@ -77,15 +80,17 @@ export default function Draw(props: IProps) {
         setGameState({ drawResult })
       })
 
-      // 此時 gameState.drawResult 已經更新完成，可以列印
-      const printResult = await print()
+      // const printResult = await print()
+      const printResult = print()
 
-      // 最後導轉到 result 頁
-      if( printResult === true ){
+      setIsMatchedPreference(data.matchedPreference)
+
+      if( data.matchedPreference === true ){
         setGameState({ currentStep: 'result' })
+      }else{
+        setIsMatchedPreference(data.matchedPreference)
       }
 
-      // console.log('抽選結果（尚未寫入 DB）:', drawResult)
     } catch (error: any) {
       alert(error.message)
     } finally {
@@ -93,7 +98,31 @@ export default function Draw(props: IProps) {
     }
   }
 
-  return <div className={twMerge('bg-red min-h-full flex flex-col justify-center', className)}>
+  return <div className={twMerge('min-h-full flex flex-col justify-center', className)}>
+
+    {
+      isMatchedPreference && <div className="fixed left-0 top-0 z-[999] flex h-full w-full items-center justify-center"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      }}>
+        <div className="relative">
+          <img className="relative" src="/img/bg_not_matched_alert.svg" alt="" />
+          <div className="absolute left-0 top-0 ml-[-24px] mt-[16px] flex h-full w-full flex-col justify-center">
+            <img className="mx-auto mb-8 w-[204px]" src="/img/title_sorry.svg" alt="" />
+            <div className="text-center text-[24px] text-[#3E1914]">目前此頻道缺人中<br/>宇宙將為你隨機配對</div>
+            <div className="my-8 flex justify-center">
+              <button
+          className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
+          onClick={()=>{
+            setGameState({ currentStep: 'result' })
+          }}>OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+
     <div className="container relative py-5">
       <div className="mx-auto w-full max-w-[531px]">
         <div className="mb-4">
@@ -147,13 +176,6 @@ export default function Draw(props: IProps) {
             </div>
           </button>
         </div>
-
-        {
-          gameState.isLoading &&
-          <div className="mt-8 text-center text-[24px] text-white">
-              抽獎中...
-          </div>
-        }
       </div>
     </div>
   </div>
