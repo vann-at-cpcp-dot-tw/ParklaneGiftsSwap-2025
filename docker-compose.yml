@@ -25,6 +25,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_PRINTER_IP=${NEXT_PUBLIC_PRINTER_IP}
+        - NEXT_PUBLIC_APP_BASE=${NEXT_PUBLIC_APP_BASE:-/}
     container_name: parklane_gifts_app
     restart: unless-stopped
     ports:

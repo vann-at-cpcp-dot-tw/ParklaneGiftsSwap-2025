@@ -13,6 +13,14 @@ RUN npm ci
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# 接收 build-time 參數
+ARG NEXT_PUBLIC_PRINTER_IP
+ARG NEXT_PUBLIC_APP_BASE
+
+# 設置為環境變數供 Next.js build 使用
+ENV NEXT_PUBLIC_PRINTER_IP=$NEXT_PUBLIC_PRINTER_IP
+ENV NEXT_PUBLIC_APP_BASE=$NEXT_PUBLIC_APP_BASE
+
 # 複製依賴
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
