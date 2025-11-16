@@ -29,7 +29,7 @@ const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
         }}
       >
         <div className="mb-[60px] pt-10">
-          <img className="w-full" src="/img/print_title.svg" alt="" />
+          <img className="w-full" src="/img/print_title.jpg" alt="" />
         </div>
 
         <div className="my-[100px] px-[40px] text-[50px] leading-[2]">
@@ -39,7 +39,7 @@ const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
         </div>
 
         <div className="mb-[100px]">
-          <img className="w-full" src="/img/print_line_1.svg" alt="" />
+          <img className="w-full" src="/img/print_line_1.jpg" alt="" />
         </div>
 
         <div className="mb-[80px]">
@@ -70,7 +70,7 @@ const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
         </div>
 
         <div className="-mb-10 pt-[80px]">
-          <img className="w-full" src="/img/print_line_2.svg" alt="" />
+          <img className="w-full" src="/img/print_line_2.jpg" alt="" />
         </div>
 
         <div className="pb-[100px]">
@@ -82,13 +82,13 @@ const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
               marginLeft: '110px',
             }}
           >
-            <img src="/img/print_deco_1.svg" alt="" style={{ width: '160px' }} />
+            <img src="/img/print_deco_1.jpg" alt="" style={{ width: '160px' }} />
             <div className="px-12 text-[60px]" style={{ marginTop: '60px' }}>
               想對你說：
             </div>
             <img
               className="relative"
-              src="/img/print_deco_2.svg"
+              src="/img/print_deco_2.jpg"
               alt=""
               style={{ width: '190px', marginTop: '200px', right: '-60px' }}
             />
@@ -110,7 +110,7 @@ const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
         </div>
 
         <div className="mb-[100px] pt-[120px]">
-          <img className="w-full" src="/img/print_line_1.svg" alt="" />
+          <img className="w-full" src="/img/print_line_1.jpg" alt="" />
         </div>
 
         <div className="px-[40px] text-[60px]">
@@ -132,7 +132,7 @@ const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
         </div>
 
         <div className="px-[40px] pb-[80px] pt-[120px]">
-          <img className="w-full" src="/img/print_merry.svg" alt="" />
+          <img className="w-full" src="/img/print_merry.jpg" alt="" />
         </div>
       </div>
     )
