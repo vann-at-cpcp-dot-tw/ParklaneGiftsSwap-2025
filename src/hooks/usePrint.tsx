@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
+
 import html2canvas from 'html2canvas'
+import { flushSync } from 'react-dom'
 
 import PrintReceipt from '~/components/PrintReceipt'
 
@@ -111,8 +112,6 @@ export function usePrint() {
       const eposPrintXml = builder.toString()
       const request = `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header><parameter xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print" /></s:Header><s:Body>${eposPrintXml}</s:Body></s:Envelope>`
 
-      console.log('XML Request 長度:', request.length)
-
       // 印表機 IP 和端點（從環境變數讀取，必須設定）
       const printerIp = process.env.NEXT_PUBLIC_PRINTER_IP
 
@@ -134,7 +133,6 @@ export function usePrint() {
       })
 
       const responseText = await response.text()
-      console.log('印表機回應:', responseText)
 
       if (!response.ok) {
         throw new Error(`印表機回應錯誤: ${response.status}`)
