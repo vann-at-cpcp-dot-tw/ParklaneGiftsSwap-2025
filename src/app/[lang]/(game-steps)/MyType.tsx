@@ -28,7 +28,7 @@ export default function MyType(props:IProps){
     <div className="container z-1 relative py-5">
       <div className="mx-auto w-full max-w-[531px]">
         <div className="mb-4">
-          <img src="/img/title_message.svg" alt="" />
+          <img src="/img/title_my_type.svg" alt="" />
         </div>
         <div className="mb-10 text-[36px] font-bold text-white">我的頻道是</div>
 

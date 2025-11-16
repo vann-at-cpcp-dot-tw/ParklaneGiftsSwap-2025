@@ -24,49 +24,49 @@ const questions = [
   {
     q: '如果你是聖誕老公公的 AI 助手， 你會怎麼派送禮物？',
     a: [
-      { type: 'A', text: '開直播無人機空投＋煙火秀 全球同步倒數' },
-      { type: 'B', text: '偷偷塞進對方枕頭底下，附一封只有你看得到的信' },
-      { type: 'C', text: '用衛星定位隨機投放，找到算你運氣好' },
+      { type: 'A', text: <div>開直播無人機空投＋煙火秀<br/>全球同步倒數</div> },
+      { type: 'B', text: <div>偷偷塞進對方枕頭底下<br/>附一封只有你看得到的信</div> },
+      { type: 'C', text: <div>用衛星定位隨機投放<br/>找到算你運氣好</div> },
     ]
   },
   {
     q: '你的 MBTI 在聖誕派對上最像：',
     a: [
-      { type: 'A', text: '剛進門就變 DJ，整場都在控台' },
-      { type: 'B', text: '幫大家掛襪子、寫祝福卡，氣氛製造機' },
-      { type: 'C', text: '看到聖誕帽就戴，衣服配不配都無所謂' },
+      { type: 'A', text: <div>剛進門就變 DJ，整場都在控台</div> },
+      { type: 'B', text: <div>幫大家掛襪子、寫祝福卡<br/>氣氛製造機</div> },
+      { type: 'C', text: <div>看到聖誕帽就戴<br/>衣服配不配都無所謂</div> },
     ]
   },
   {
     q: '萬一聖誕夜全世界只剩 3 小時電，你會？',
     a: [
-      { type: 'A', text: '開末日 BBQ 派對，冰箱清空就是今晚菜單' },
-      { type: 'B', text: '點滿蠟燭圍爐，講故事講到最後一秒' },
-      { type: 'C', text: '先睡再說，醒來發現根本是自己沒繳電費' },
+      { type: 'A', text: <div>開末日 BBQ 派對<br/>冰箱清空就是今晚菜單</div> },
+      { type: 'B', text: <div>點滿蠟燭圍爐<br/>講故事講到最後一秒</div> },
+      { type: 'C', text: <div>先睡再說<br/>醒來發現根本是自己沒繳電費</div> },
     ]
   },
   {
     q: '你挑聖誕交換禮物時最在意：',
     a: [
-      { type: 'A', text: '包裝要能閃瞎攝影師，直接上熱門 Reels' },
-      { type: 'B', text: '對方打開會紅眼眶，當場抱住你說你最懂我' },
-      { type: 'C', text: '剛好路過跳蚤市場看到，覺得這怪怪的好可愛' },
+      { type: 'A', text: <div>包裝要能閃瞎攝影師<br/>直接上熱門 Reels</div> },
+      { type: 'B', text: <div>對方打開會紅眼眶<br/>當場抱住你說你最懂我</div> },
+      { type: 'C', text: <div>剛好路過跳蚤市場看到<br/>覺得這怪怪的好可愛</div> },
     ]
   },
   {
     q: '到了交換禮物環節，你最想玩的遊戲是？',
     a: [
-      { type: 'A', text: '俄羅斯禮物盒：轉到爆炸就是你的' },
-      { type: 'B', text: '心跳拆包裝：每拆一層要說一句暖心話 ' },
-      { type: 'C', text: '隨機抽卡：抽到自由就能把禮物亂丟' },
+      { type: 'A', text: <div>俄羅斯禮物盒：<br/>轉到爆炸就是你的</div> },
+      { type: 'B', text: <div>心跳拆包裝：<br/>每拆一層要說一句暖心話</div> },
+      { type: 'C', text: <div>隨機抽卡：<br/>抽到自由就能把禮物亂丟</div> },
     ]
   },
   {
     q: '如果你的禮物會說話，它會對你說什麼？',
     a: [
-      { type: 'A', text: '「快拆我！裡面有 50 個派對喇叭！」' },
-      { type: 'B', text: '「我其實只是想陪你看一場雪。」' },
-      { type: 'C', text: '「雖然我過期了，但還能拿去換熱紅酒。」' },
+      { type: 'A', text: <div>快拆我！裡面有 50 個派對喇叭</div> },
+      { type: 'B', text: <div>我其實只是想陪你看一場雪</div> },
+      { type: 'C', text: <div>雖然我過期了<br/>但還能拿去換熱紅酒</div> },
     ]
   },
 ]
@@ -160,7 +160,7 @@ export default function Test(props:IProps){
         </div>
       }
 
-      <div className="mt-8 flex justify-center gap-5">
+      <div className="mt-16 flex justify-center gap-5">
         <button
           disabled={questionState.currentIndex === 0}
           className={twMerge(
