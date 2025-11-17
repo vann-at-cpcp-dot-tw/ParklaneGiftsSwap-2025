@@ -21,14 +21,34 @@ export async function DELETE(
       )
     }
 
-    // 直接硬刪除 PendingSubmission
-    const deleted = await prisma.pendingSubmission.delete({
-      where: { id },
+    // 使用 transaction 釋放格子並刪除 PendingSubmission
+    const result = await prisma.$transaction(async (tx) => {
+      // 獲取 pending（含格子 ID）
+      const pending = await tx.pendingSubmission.findUnique({
+        where: { id },
+      })
+
+      if (!pending) {
+        throw new Error('待審核記錄不存在')
+      }
+
+      // 釋放格子鎖定
+      await tx.grid.update({
+        where: { id: pending.assignedGridId },
+        data: { status: 'available' },
+      })
+
+      // 刪除 PendingSubmission
+      const deleted = await tx.pendingSubmission.delete({
+        where: { id },
+      })
+
+      return deleted
     })
 
     return NextResponse.json({
       success: true,
-      deletedId: deleted.id,
+      deletedId: result.id,
     })
   } catch (error: any) {
     // Prisma P2025: Record not found

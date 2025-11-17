@@ -39,10 +39,13 @@ export async function DELETE() {
   try {
     // 使用事務清空所有資料
     await prisma.$transaction(async (tx) => {
-      // 1. 刪除所有提交記錄
+      // 1. 先刪除所有待審核記錄（避免外鍵約束錯誤）
+      await tx.pendingSubmission.deleteMany({})
+
+      // 2. 刪除所有提交記錄
       await tx.submission.deleteMany({})
 
-      // 2. 刪除所有格子
+      // 3. 刪除所有格子
       await tx.grid.deleteMany({})
     })
 

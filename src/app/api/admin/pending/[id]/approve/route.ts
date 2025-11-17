@@ -34,10 +34,10 @@ export async function POST(
       )
     }
 
-    // 2. 驗證 Grid 狀態
-    if (pending.grid.status !== 'available') {
+    // 2. 驗證 Grid 狀態（locked 或 available 都是正常狀態）
+    if (pending.grid.status !== 'locked' && pending.grid.status !== 'available') {
       return NextResponse.json(
-        { error: '格子已被佔用，無法審核通過' },
+        { error: '格子狀態異常，無法審核通過' },
         { status: 409 }
       )
     }

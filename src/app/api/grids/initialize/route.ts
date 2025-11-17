@@ -81,13 +81,17 @@ export async function POST(request: Request) {
     // 檢查是否已經有資料
     const existingGrids = await prisma.grid.count()
     const existingSubmissions = await prisma.submission.count()
+    const existingPending = await prisma.pendingSubmission.count()
 
-    if (existingGrids > 0 || existingSubmissions > 0) {
+    if (existingGrids > 0 || existingSubmissions > 0 || existingPending > 0) {
       return NextResponse.json(
         {
-          error: '資料庫中已有資料，請先清空',
-          grids: existingGrids,
-          submissions: existingSubmissions,
+          error: '資料庫中已有資料，請先清空再進行初始化',
+          details: {
+            grids: existingGrids,
+            submissions: existingSubmissions,
+            pending: existingPending,
+          },
         },
         { status: 400 }
       )

@@ -105,28 +105,46 @@ export async function POST(request: Request) {
     })
     const nextParticipantNumber = (lastSubmission?.participantNumber || 0) + 1
 
-    // 6. 創建待審核記錄（不鎖定格子，不分配參加者編號）
-    const pendingSubmission = await prisma.pendingSubmission.create({
-      data: {
-        giftType,
-        message,
-        name,
-        lineId: lineId || null,
-        instagram: instagram || null,
-        assignedGridId: selectedGrid.id,
-        previousSubmission: previousSubmission
-          ? {
-            participantNumber: previousSubmission.participantNumber,
-            realParticipantNo: previousSubmission.realParticipantNo,
-            giftType: previousSubmission.giftType,
-            message: previousSubmission.message,
-            name: previousSubmission.name,
-            lineId: previousSubmission.lineId,
-            instagram: previousSubmission.instagram,
-          }
-          : Prisma.DbNull,
-        matchedPreference,
-      },
+    // 6. 創建待審核記錄並鎖定格子（使用 transaction 確保原子性）
+    const pendingSubmission = await prisma.$transaction(async (tx) => {
+      // 再次檢查格子狀態（防止並發衝突）
+      const grid = await tx.grid.findUnique({
+        where: { id: selectedGrid.id },
+      })
+
+      if (!grid || grid.status !== 'available') {
+        throw new Error('格子已被佔用，請重試')
+      }
+
+      // 鎖定格子
+      await tx.grid.update({
+        where: { id: selectedGrid.id },
+        data: { status: 'locked' },
+      })
+
+      // 創建 PendingSubmission
+      return await tx.pendingSubmission.create({
+        data: {
+          giftType,
+          message,
+          name,
+          lineId: lineId || null,
+          instagram: instagram || null,
+          assignedGridId: selectedGrid.id,
+          previousSubmission: previousSubmission
+            ? {
+              participantNumber: previousSubmission.participantNumber,
+              realParticipantNo: previousSubmission.realParticipantNo,
+              giftType: previousSubmission.giftType,
+              message: previousSubmission.message,
+              name: previousSubmission.name,
+              lineId: previousSubmission.lineId,
+              instagram: previousSubmission.instagram,
+            }
+            : Prisma.DbNull,
+          matchedPreference,
+        },
+      })
     })
 
     return NextResponse.json({
