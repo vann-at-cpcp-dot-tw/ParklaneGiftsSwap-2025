@@ -34,10 +34,10 @@ export async function POST(
       )
     }
 
-    // 2. 驗證 Grid 狀態（locked 或 available 都是正常狀態）
-    if (pending.grid.status !== 'locked' && pending.grid.status !== 'available') {
+    // 2. 驗證 Grid 狀態（只允許 locked）
+    if (pending.grid.status !== 'locked') {
       return NextResponse.json(
-        { error: '格子狀態異常，無法審核通過' },
+        { error: '格子狀態異常，必須為 locked 才能審核' },
         { status: 409 }
       )
     }
@@ -60,6 +60,16 @@ export async function POST(
 
     // 5. 使用 transaction 創建 Submission + 更新 Grid + 刪除 Pending
     const result = await prisma.$transaction(async (tx) => {
+      // 5.0 先刪除 PendingSubmission（防止並發審核）
+      const deleteResult = await tx.pendingSubmission.deleteMany({
+        where: { id },
+      })
+
+      // 如果刪除了 0 行，說明已被其他請求處理
+      if (deleteResult.count === 0) {
+        throw new Error('待審核記錄不存在（可能已被其他管理員處理）')
+      }
+
       // 5.1 創建正式 Submission
       const submission = await tx.submission.create({
         data: {
@@ -86,11 +96,6 @@ export async function POST(
         },
       })
 
-      // 5.3 刪除 PendingSubmission
-      await tx.pendingSubmission.delete({
-        where: { id },
-      })
-
       return submission
     })
 
@@ -107,6 +112,16 @@ export async function POST(
     })
   } catch (error: any) {
     console.error('審核通過失敗:', error)
+
+    // 如果是已知的業務錯誤，直接返回錯誤訊息
+    if (error.message && error.message.includes('待審核記錄不存在')) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 404 }
+      )
+    }
+
+    // 其他錯誤返回 500
     return NextResponse.json(
       { error: '審核通過失敗', details: error.message },
       { status: 500 }

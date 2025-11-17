@@ -4,18 +4,19 @@ import { prisma } from '~/lib/prisma'
 
 /**
  * GET /api/pending/check
- * 檢查是否有待審核記錄
- * 用於初始化時判斷是否需要強制進入 result 頁
+ * 檢查是否有待審核記錄（全局鎖定機制）
+ *
+ * 設計理念：
+ * - 只返回 boolean，不返回具體 pendingId
+ * - 語義：「有人在排隊」而不是「輪詢這個 ID」
+ * - 前端：有 pending 就全局鎖定在 result 頁，不做個人輪詢
  */
 export async function GET() {
   try {
-    const pending = await prisma.pendingSubmission.findFirst({
-      orderBy: { createdAt: 'desc' },
-    })
+    const pendingCount = await prisma.pendingSubmission.count()
 
     return NextResponse.json({
-      hasPending: !!pending,
-      pendingId: pending?.id || null,
+      hasPending: pendingCount > 0,
     })
   } catch (error: any) {
     console.error('檢查待審核記錄失敗:', error)

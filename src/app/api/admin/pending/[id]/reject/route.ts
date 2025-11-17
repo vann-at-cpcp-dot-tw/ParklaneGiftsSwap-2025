@@ -32,6 +32,19 @@ export async function DELETE(
         throw new Error('待審核記錄不存在')
       }
 
+      // 驗證格子狀態（防止並發拒絕覆蓋其他鎖定）
+      const grid = await tx.grid.findUnique({
+        where: { id: pending.assignedGridId },
+      })
+
+      if (!grid) {
+        throw new Error('格子不存在')
+      }
+
+      if (grid.status !== 'locked') {
+        throw new Error('格子狀態異常：不是 locked 狀態，可能已被其他操作處理')
+      }
+
       // 釋放格子鎖定
       await tx.grid.update({
         where: { id: pending.assignedGridId },

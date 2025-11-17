@@ -75,18 +75,19 @@ export default function Home() {
   // 使用列印 hook
   const { print, PrintTemplate } = usePrint()
 
-  // 初始化檢查：是否有待審核記錄
+  // 初始化檢查：是否有待審核記錄（全局鎖定機制）
   useEffect(() => {
     const checkPending = async () => {
       try {
         const response = await fetch('/api/pending/check')
         const data = await response.json()
 
-        if (data.hasPending && data.pendingId) {
-          // 強制進入 result 頁面並設定 pendingId
+        if (data.hasPending) {
+          // 強制進入 result 頁面（全局鎖定，不設定 pendingId）
+          // 顯示：「其他參加者正在審核中...」
           setGameState({
             currentStep: 'result',
-            pendingId: data.pendingId,
+            pendingId: null,  // 不設定 pendingId，表示全局鎖定
           })
         }
       } catch (error) {

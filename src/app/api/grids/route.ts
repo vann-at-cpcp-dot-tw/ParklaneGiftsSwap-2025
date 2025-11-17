@@ -37,15 +37,24 @@ export async function GET() {
  */
 export async function DELETE() {
   try {
+    // 檢查是否有待審核記錄（防止中斷進行中的遊戲）
+    const pendingCount = await prisma.pendingSubmission.count()
+    if (pendingCount > 0) {
+      return NextResponse.json(
+        {
+          error: '無法清空資料：目前有待審核記錄',
+          details: `有 ${pendingCount} 筆待審核記錄，請先處理完畢再清空`
+        },
+        { status: 409 }
+      )
+    }
+
     // 使用事務清空所有資料
     await prisma.$transaction(async (tx) => {
-      // 1. 先刪除所有待審核記錄（避免外鍵約束錯誤）
-      await tx.pendingSubmission.deleteMany({})
-
-      // 2. 刪除所有提交記錄
+      // 1. 刪除所有提交記錄
       await tx.submission.deleteMany({})
 
-      // 3. 刪除所有格子
+      // 2. 刪除所有格子
       await tx.grid.deleteMany({})
     })
 

@@ -28,9 +28,9 @@ model Grid {
 // 提交表：參加者記錄
 model Submission {
   id                Int       @id @default(autoincrement())
-  participantNumber Int       // 全局參加者編號（包含預設禮物）
+  participantNumber Int       @unique // 全局參加者編號（包含預設禮物）
   isInitialGift     Boolean   @default(false) // 是否為預設禮物（初始化時的 30 個禮物）
-  realParticipantNo Int?      // 真實參加者編號（1, 2, 3...，預設禮物為 null）
+  realParticipantNo Int?      @unique // 真實參加者編號（1, 2, 3...，預設禮物為 null）
   giftType          String    // 'A' | 'B' | 'C'
   message           String    @default("") // 20 字留言
 

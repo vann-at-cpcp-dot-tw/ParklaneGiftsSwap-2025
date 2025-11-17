@@ -2,7 +2,7 @@
 
 const APP_BASE = process.env.NEXT_PUBLIC_APP_BASE || '/'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { twMerge } from 'tailwind-merge'
 
@@ -25,7 +25,8 @@ interface IProps {
 export default function Result(props: IProps) {
   const { id, className } = props ?? {}
   const { gameState, setGameState, print } = useScopeStore()
-
+  const [pollingError, setPollingError] = useState<string | null>(null)
+  const errorCountRef = useRef(0)
 
   // 提交審核
   const handleComplete = async () => {
@@ -74,7 +75,12 @@ export default function Result(props: IProps) {
 
   // 輪詢審核狀態
   useEffect(() => {
-    if (!gameState.pendingId) return
+    if (!gameState.pendingId) {
+      // 重置錯誤狀態
+      errorCountRef.current = 0
+      setPollingError(null)
+      return
+    }
 
     const checkStatus = async () => {
       try {
@@ -83,6 +89,8 @@ export default function Result(props: IProps) {
 
         if (data.status === 'processed') {
           // 審核完成（通過或拒絕），重置流程回到首頁
+          errorCountRef.current = 0
+          setPollingError(null)
           setGameState({
             pendingId: null,
             drawResult: null,
@@ -93,9 +101,20 @@ export default function Result(props: IProps) {
             lineId: '',
             instagram: '',
           })
+        } else {
+          // 成功獲取狀態，重置錯誤計數
+          errorCountRef.current = 0
+          setPollingError(null)
         }
       } catch (error) {
         console.error('檢查審核狀態失敗:', error)
+        errorCountRef.current += 1
+
+        if (errorCountRef.current >= 3) {
+          // 連續 3 次失敗，顯示錯誤訊息
+          setPollingError('網路連線異常，請檢查網路或聯繫工作人員')
+        }
+        // 繼續輪詢（不中斷 interval）
       }
     }
 
@@ -105,7 +124,11 @@ export default function Result(props: IProps) {
     // 每 2 秒輪詢一次
     const interval = setInterval(checkStatus, 2000)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      errorCountRef.current = 0
+      setPollingError(null)
+    }
   }, [gameState.pendingId])
 
   return <div className={twMerge('min-h-full flex flex-col', className)}>
@@ -129,26 +152,33 @@ export default function Result(props: IProps) {
             即可前往禮物櫃<br/>
             開啟專屬你的聖誕驚喜<br/>
             </div>
-            <div className="flex justify-center">
-              {!gameState.drawResult && !gameState.pendingId ? (
-                // 鎖定狀態：有其他人的待審核記錄（頁面重新載入後進入此狀態）
-                <div className="flex h-[64px] w-[400px] items-center justify-center rounded-full bg-[#3E1914] text-[28px] font-bold text-[#DCDD9B]">
-                  其他參加者正在審核中...
+            <div className="flex flex-col items-center">
+              <div className="flex justify-center">
+                {!gameState.drawResult && !gameState.pendingId ? (
+                  // 鎖定狀態：有其他人的待審核記錄（頁面重新載入後進入此狀態）
+                  <div className="flex h-[64px] w-[400px] items-center justify-center rounded-full bg-[#3E1914] text-[28px] font-bold text-[#DCDD9B]">
+                    其他參加者正在審核中...
+                  </div>
+                ) : gameState.pendingId ? (
+                  // 審核中：自己的申請正在審核
+                  <div className="flex h-[64px] w-[320px] items-center justify-center rounded-full bg-[#3E1914] text-[28px] font-bold text-[#DCDD9B]">
+                    審核中，請稍候...
+                  </div>
+                ) : (
+                  // 正常流程：顯示 GO 按鈕
+                  <button
+                    className="flex h-[64px] w-[200px] items-center justify-center rounded-full bg-[#3E1914] text-[32px] font-bold text-[#DCDD9B]"
+                    onClick={handleComplete}
+                    disabled={gameState.isLoading}
+                  >
+                    {gameState.isLoading ? '...通訊中...' : 'GO！'}
+                  </button>
+                )}
+              </div>
+              {pollingError && gameState.pendingId && (
+                <div className="mt-4 text-center text-[20px] font-semibold text-red-600">
+                  {pollingError}
                 </div>
-              ) : gameState.pendingId ? (
-                // 審核中：自己的申請正在審核
-                <div className="flex h-[64px] w-[320px] items-center justify-center rounded-full bg-[#3E1914] text-[28px] font-bold text-[#DCDD9B]">
-                  審核中，請稍候...
-                </div>
-              ) : (
-                // 正常流程：顯示 GO 按鈕
-                <button
-                  className="flex h-[64px] w-[200px] items-center justify-center rounded-full bg-[#3E1914] text-[32px] font-bold text-[#DCDD9B]"
-                  onClick={handleComplete}
-                  disabled={gameState.isLoading}
-                >
-                  {gameState.isLoading ? '...通訊中...' : 'GO！'}
-                </button>
               )}
             </div>
           </div>
