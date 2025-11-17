@@ -1,7 +1,7 @@
 // X7BJ018561
 'use client'
 
-import { useReducer } from 'react'
+import { useEffect, useReducer } from 'react'
 
 import { usePrint } from '~/hooks/usePrint'
 
@@ -53,6 +53,7 @@ interface IState {
   estimatedParticipantNo: number | null,
   drawResult: DrawResult | null,
   base64Image: string
+  pendingId: number | null // 待審核記錄 ID
 }
 
 
@@ -68,10 +69,33 @@ export default function Home() {
     estimatedParticipantNo: null,
     drawResult: null,
     base64Image: '',
+    pendingId: null,
   })
 
   // 使用列印 hook
   const { print, PrintTemplate } = usePrint()
+
+  // 初始化檢查：是否有待審核記錄
+  useEffect(() => {
+    const checkPending = async () => {
+      try {
+        const response = await fetch('/api/pending/check')
+        const data = await response.json()
+
+        if (data.hasPending && data.pendingId) {
+          // 強制進入 result 頁面並設定 pendingId
+          setGameState({
+            currentStep: 'result',
+            pendingId: data.pendingId,
+          })
+        }
+      } catch (error) {
+        console.error('檢查待審核記錄失敗:', error)
+      }
+    }
+
+    checkPending()
+  }, [])
 
 
   return <ScopeStoreProvider state={{gameState, setGameState, print}}>

@@ -3,9 +3,6 @@ import '~~/public/external-import.css'
 import Script from 'next/script'
 
 import Providers from '~/app/[lang]/providers'
-import Footer from '~/components/custom/Footer'
-import GuardWrapper from '~/components/custom/GuardWrapper'
-import Header from '~/components/custom/Header'
 import { isEmpty } from '~/lib/utils'
 
 export const metadata = {
@@ -49,13 +46,9 @@ export default async function RootLayout({
           zIndex: 0,
         }}></div>
         <div id="app" className="flex h-screen flex-col" style={{ zIndex: 1}}>
-          {/* <Header /> */}
           <div className="grow">
-            <GuardWrapper>
-              { children }
-            </GuardWrapper>
+            { children }
           </div>
-          {/* <Footer /> */}
         </div>
       </Providers>
     </body>

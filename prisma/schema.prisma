@@ -19,6 +19,7 @@ model Grid {
   updatedAt            DateTime     @updatedAt
 
   submissions          Submission[]
+  pendingSubmissions   PendingSubmission[]
 
   @@index([status])
   @@index([currentGiftType, status])
@@ -60,4 +61,29 @@ model Submission {
   @@index([assignedGridId, status, completedAt])    // 優化查詢特定格子的最新完成記錄
   @@index([isInitialGift, realParticipantNo])       // 優化查詢下一個真實參加者編號
   @@index([assignedGridId, status, completedAt, isDeleted]) // 優化查詢特定格子的最新未刪除記錄
+}
+
+// 待審核提交表：審核前的暫存記錄
+model PendingSubmission {
+  id                   Int       @id @default(autoincrement())
+  giftType             String    // 'A' | 'B' | 'C'
+  message              String    @default("") // 20 字留言
+
+  // 聯絡資訊
+  name                 String    // 姓名
+  lineId               String?   // LINE ID（可選）
+  instagram            String?   // Instagram（可選）
+
+  assignedGridId       Int       // 抽到哪一格
+
+  // 抽選資訊（用於列印和顯示）
+  previousSubmission   Json?     // 上一位參加者資訊（JSON 格式存儲）
+  matchedPreference    Boolean   @default(true) // 是否符合偏好
+
+  createdAt            DateTime  @default(now())
+
+  grid                 Grid      @relation(fields: [assignedGridId], references: [id])
+
+  @@index([assignedGridId])
+  @@index([createdAt])
 }

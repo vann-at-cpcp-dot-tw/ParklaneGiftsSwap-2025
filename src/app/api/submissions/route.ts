@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { prisma } from '~/lib/prisma'
+import { prisma, Prisma } from '~/lib/prisma'
 
 export async function POST(request: Request) {
   try {
@@ -105,67 +105,38 @@ export async function POST(request: Request) {
     })
     const nextParticipantNumber = (lastSubmission?.participantNumber || 0) + 1
 
-    // 5.5 取得下一個真實參加者編號（不包含預設禮物）
-    const lastRealParticipant = await prisma.submission.findFirst({
-      where: { isInitialGift: false },
-      orderBy: { realParticipantNo: 'desc' },
-    })
-    const nextRealParticipantNo = (lastRealParticipant?.realParticipantNo || 0) + 1
-
-    // 6. 鎖定並創建提交記錄（事務保證原子性）
-    const submission = await prisma.$transaction(async (tx) => {
-      // 1. 嘗試鎖定格子（樂觀鎖保護併發）
-      const lockedGrid = await tx.grid.updateMany({
-        where: {
-          id: selectedGrid.id,
-          status: 'available', // 只有 available 才能鎖
-        },
-        data: { status: 'locked' },
-      })
-
-      if (lockedGrid.count === 0) {
-        throw new Error('格子已被佔用，請重試')
-      }
-
-      // 2. 創建提交記錄（直接完成）
-      const newSubmission = await tx.submission.create({
-        data: {
-          participantNumber: nextParticipantNumber,
-          isInitialGift: false, // 真實參加者
-          realParticipantNo: nextRealParticipantNo, // 真實參加者編號（1, 2, 3...）
-          giftType,
-          message,
-          name,
-          lineId: lineId || null,
-          instagram: instagram || null,
-          assignedGridId: selectedGrid.id,
-          status: 'completed', // 單一事務直接完成
-          completedAt: new Date(), // 記錄完成時間
-        },
-      })
-
-      // 3. 立即解鎖格子並更新狀態（格子可被下一個參加者使用）
-      await tx.grid.update({
-        where: { id: selectedGrid.id },
-        data: {
-          status: 'available', // 解鎖格子
-          currentGiftType: newSubmission.giftType, // 更新當前禮物類型
-          currentParticipantId: newSubmission.id, // 更新當前參加者 ID
-        },
-      })
-
-      return newSubmission
+    // 6. 創建待審核記錄（不鎖定格子，不分配參加者編號）
+    const pendingSubmission = await prisma.pendingSubmission.create({
+      data: {
+        giftType,
+        message,
+        name,
+        lineId: lineId || null,
+        instagram: instagram || null,
+        assignedGridId: selectedGrid.id,
+        previousSubmission: previousSubmission
+          ? {
+            participantNumber: previousSubmission.participantNumber,
+            realParticipantNo: previousSubmission.realParticipantNo,
+            giftType: previousSubmission.giftType,
+            message: previousSubmission.message,
+            name: previousSubmission.name,
+            lineId: previousSubmission.lineId,
+            instagram: previousSubmission.instagram,
+          }
+          : Prisma.DbNull,
+        matchedPreference,
+      },
     })
 
     return NextResponse.json({
       success: true,
       matchedPreference,
+      pendingId: pendingSubmission.id,
       submission: {
-        id: submission.id,
-        participantNumber: submission.participantNumber,
-        giftType: submission.giftType,
-        assignedGridId: submission.assignedGridId,
+        assignedGridId: pendingSubmission.assignedGridId,
         gridNumber: selectedGrid.gridNumber,
+        giftType: pendingSubmission.giftType,
       },
       previousSubmission: previousSubmission
         ? {
