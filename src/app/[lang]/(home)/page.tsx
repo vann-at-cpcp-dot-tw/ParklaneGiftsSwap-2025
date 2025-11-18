@@ -24,6 +24,7 @@ declare global {
 export interface DrawResult {
   success: boolean
   matchedPreference: boolean
+  userPreference: 'same' | 'different' | 'random'  // 用戶的原始選擇
   submission: {
     id?: number  // 抽選時尚未分配，確認時才有
     participantNumber?: number  // 抽選時尚未分配，確認時才有

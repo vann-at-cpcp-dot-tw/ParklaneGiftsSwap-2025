@@ -9,7 +9,7 @@ interface PrintReceiptProps {
 }
 
 /**
- * 列印小票模板組件
+ * 列印模板組件
  */
 const PrintReceipt = forwardRef<HTMLDivElement, PrintReceiptProps>(
   ({ data }, ref) => {

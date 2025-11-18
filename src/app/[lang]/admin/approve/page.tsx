@@ -57,26 +57,30 @@ export default function ApprovePage() {
 
     setIsLoading(true)
 
+    if (!pending.previousSubmission) {
+      alert('無法列印，上一位參加者資料缺失')
+      setIsLoading(false)
+      return
+    }
+
     try {
 
       // 1. 先列印
-      if (pending.previousSubmission) {
-        const printData: PrintData = {
-          previousSubmission: pending.previousSubmission,
-          currentParticipant: {
-            participantNumber: 0, // 暫時使用 0，列印後會從 API 獲取真實編號
-            gridNumber: pending.gridNumber,
-            giftType: pending.giftType,
-          },
-        }
+      const printData: PrintData = {
+        previousSubmission: pending.previousSubmission,
+        currentParticipant: {
+          participantNumber: 0, // 暫時使用 0，列印後會從 API 獲取真實編號
+          gridNumber: pending.gridNumber,
+          giftType: pending.giftType,
+        },
+      }
 
-        const printResult = await print(printData)
+      const printResult = await print(printData)
 
-        if (printResult !== true) {
-          alert('列印失敗，請重試')
-          setIsLoading(false)
-          return
-        }
+      if (printResult !== true) {
+        alert('列印失敗，請重試')
+        setIsLoading(false)
+        return
       }
 
       // 2. 列印成功後，呼叫 API 審核通過
@@ -90,9 +94,9 @@ export default function ApprovePage() {
         throw new Error(data.error || '審核失敗')
       }
 
-      alert(
-        `審核通過！\n參加者編號：${data.submission.participantNumber}\n格子：${data.submission.gridNumber}`
-      )
+      // alert(
+      //   `審核通過！\n參加者編號：${data.submission.participantNumber}\n格子：${data.submission.gridNumber}`
+      // )
 
       // 刷新列表
       await fetchPendingList()
@@ -175,18 +179,18 @@ export default function ApprovePage() {
                       <strong>抽到格子：</strong>
                       {pending.gridNumber}
                     </p>
-                    <p>
+                    {/* <p>
                       <strong>留言：</strong>
                       {pending.message || '（無）'}
-                    </p>
-                    <p>
+                    </p> */}
+                    {/* <p>
                       <strong>LINE ID：</strong>
                       {pending.lineId || '（未提供）'}
-                    </p>
-                    <p>
+                    </p> */}
+                    {/* <p>
                       <strong>Instagram：</strong>
                       {pending.instagram || '（未提供）'}
-                    </p>
+                    </p> */}
                     <p>
                       <strong>符合偏好：</strong>
                       {pending.matchedPreference ? '✅ 是' : '❌ 否'}
@@ -217,18 +221,18 @@ export default function ApprovePage() {
                         <strong>編號：</strong>
                         {pending.previousSubmission.participantNumber}
                       </p>
-                      <p>
+                      {/* <p>
                         <strong>留言：</strong>
                         {pending.previousSubmission.message || '（無）'}
-                      </p>
-                      <p>
+                      </p> */}
+                      {/* <p>
                         <strong>LINE ID：</strong>
                         {pending.previousSubmission.lineId || '（未提供）'}
-                      </p>
-                      <p>
+                      </p> */}
+                      {/* <p>
                         <strong>Instagram：</strong>
                         {pending.previousSubmission.instagram || '（未提供）'}
-                      </p>
+                      </p> */}
                     </div>
                   ) : (
                     <p style={{ color: '#999' }}>（這是第一個放入此格子的禮物）</p>
@@ -252,7 +256,7 @@ export default function ApprovePage() {
                     fontWeight: 'bold',
                   }}
                 >
-                  {isLoading ? '處理中...' : '✅ 審核通過（列印小票）'}
+                  {isLoading ? '處理中...' : '✅ 審核通過（列印+歸檔）'}
                 </button>
 
                 <button
@@ -289,7 +293,7 @@ export default function ApprovePage() {
         <h2>使用說明</h2>
         <ul style={{ lineHeight: '1.8' }}>
           <li>
-            <strong>審核通過</strong>：點擊後會先列印小票，然後將申請寫入正式記錄
+            <strong>審核通過</strong>：點擊後會先列印，然後將申請寫入正式記錄
           </li>
           <li>
             <strong>拒絕申請</strong>：直接刪除此申請，不留記錄（例如禮物不合格）

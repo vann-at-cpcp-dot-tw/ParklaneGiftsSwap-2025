@@ -1,19 +1,10 @@
 "use client"
 
-const APP_BASE = process.env.NEXT_PUBLIC_APP_BASE || '/'
-
 import { useEffect, useRef, useState } from 'react'
 
 import { twMerge } from 'tailwind-merge'
 
 import { useScopeStore } from '~/app/[lang]/(home)/scope-store'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu"
-import { isEmpty } from '~/lib/utils'
 
 
 
@@ -27,6 +18,7 @@ export default function Result(props: IProps) {
   const { gameState, setGameState, print } = useScopeStore()
   const [pollingError, setPollingError] = useState<string | null>(null)
   const errorCountRef = useRef(0)
+  const hasSubmittedRef = useRef(false)  // 防止重複提交
 
   // 提交審核
   const handleComplete = async () => {
@@ -35,6 +27,12 @@ export default function Result(props: IProps) {
     setGameState({ isLoading: true })
 
     try {
+      // 將用戶選擇轉換為 API 參數
+      const preferSameType =
+        gameState.drawResult.userPreference === 'same' ? true :
+          gameState.drawResult.userPreference === 'different' ? false :
+            null  // random
+
       // 創建待審核記錄（不列印，不寫入 Submission）
       const response = await fetch('/api/submissions', {
         method: 'POST',
@@ -46,7 +44,7 @@ export default function Result(props: IProps) {
           lineId: gameState.lineId || '',
           instagram: gameState.instagram || '',
           assignedGridId: gameState.drawResult.submission.assignedGridId, // 使用預選的格子
-          preferSameType: gameState.drawResult.matchedPreference ? true : null, // 保留偏好記錄
+          preferSameType,  // 使用正確的用戶偏好
         }),
       })
 
@@ -55,7 +53,7 @@ export default function Result(props: IProps) {
       if (!response.ok) {
         // 處理格子已被佔用的情況
         if (data.retryable) {
-          alert('格子已被佔用（可能其他裝置搶先），請重新抽選')
+          alert('格子已被佔用，請重新抽選')
           setGameState({ drawResult: null, currentStep: 'draw', isLoading: false })
           return
         }
@@ -72,6 +70,15 @@ export default function Result(props: IProps) {
       setGameState({ isLoading: false })
     }
   }
+
+  // 自動提交審核（進入頁面時）
+  useEffect(() => {
+    // 只在有 drawResult 且沒有 pendingId 且尚未提交時，自動提交
+    if (gameState.drawResult && !gameState.pendingId && !hasSubmittedRef.current) {
+      hasSubmittedRef.current = true
+      handleComplete()
+    }
+  }, [])
 
   // 輪詢審核狀態
   useEffect(() => {
@@ -145,7 +152,7 @@ export default function Result(props: IProps) {
             <img className="relative top-[4px]" src="/img/robot.svg" alt="" />
           </div>
           <div className="shrink pb-12 pl-12 text-[32px] font-semibold text-[#3A6848]">
-            <div className="mb-8">
+            <div className="mb-6">
             快跟銀色小精靈<br/>
             領取你的訊息<br/>
             再跟櫃檯人員換取鑰匙卡<br/>
@@ -153,33 +160,17 @@ export default function Result(props: IProps) {
             開啟專屬你的聖誕驚喜<br/>
             </div>
             <div className="flex flex-col items-center">
-              <div className="flex justify-center">
-                {!gameState.drawResult && !gameState.pendingId ? (
-                  // 鎖定狀態：有其他人的待審核記錄（頁面重新載入後進入此狀態）
-                  <div className="flex h-[64px] w-[400px] items-center justify-center rounded-full bg-[#3E1914] text-[28px] font-bold text-[#DCDD9B]">
-                    其他參加者正在審核中...
+              {
+                pollingError && gameState.pendingId
+                  ? <div className="mt-4 text-center text-[20px] font-semibold text-red-600">
+                    { pollingError }
                   </div>
-                ) : gameState.pendingId ? (
-                  // 審核中：自己的申請正在審核
-                  <div className="flex h-[64px] w-[320px] items-center justify-center rounded-full bg-[#3E1914] text-[28px] font-bold text-[#DCDD9B]">
-                    審核中，請稍候...
+                  : <div className="flex justify-center">
+                    <div className="flex items-center justify-center whitespace-nowrap rounded-full bg-[#3E1914] px-8 py-2 text-[28px] font-bold text-[#DCDD9B]">
+                  ...與銀色小精靈通訊中...
+                    </div>
                   </div>
-                ) : (
-                  // 正常流程：顯示 GO 按鈕
-                  <button
-                    className="flex h-[64px] w-[200px] items-center justify-center rounded-full bg-[#3E1914] text-[32px] font-bold text-[#DCDD9B]"
-                    onClick={handleComplete}
-                    disabled={gameState.isLoading}
-                  >
-                    {gameState.isLoading ? '...通訊中...' : 'GO！'}
-                  </button>
-                )}
-              </div>
-              {pollingError && gameState.pendingId && (
-                <div className="mt-4 text-center text-[20px] font-semibold text-red-600">
-                  {pollingError}
-                </div>
-              )}
+              }
             </div>
           </div>
         </div>

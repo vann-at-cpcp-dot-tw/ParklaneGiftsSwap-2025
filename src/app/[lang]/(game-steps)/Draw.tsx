@@ -65,6 +65,7 @@ export default function Draw(props: IProps) {
       const drawResult: DrawResult = {
         success: true,
         matchedPreference: data.matchedPreference,
+        userPreference: choice,  // 保存用戶的原始選擇
         submission: {
           id: 0,  // 暫時沒有 ID（尚未寫入 DB）
           participantNumber: gameState.estimatedParticipantNo || 0,  // 使用 Welcome 取得的預估編號
@@ -98,7 +99,7 @@ export default function Draw(props: IProps) {
   return <div className={twMerge('min-h-full flex flex-col justify-center', className)}>
 
     {
-      isMatchedPreference && <div className="fixed left-0 top-0 z-[999] flex h-full w-full items-center justify-center"
+      isMatchedPreference === false && <div className="fixed left-0 top-0 z-[999] flex h-full w-full items-center justify-center"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
       }}>
@@ -106,7 +107,7 @@ export default function Draw(props: IProps) {
           <img className="relative" src="/img/bg_not_matched_alert.svg" alt="" />
           <div className="absolute left-0 top-0 ml-[-24px] mt-[16px] flex h-full w-full flex-col justify-center">
             <img className="mx-auto mb-8 w-[204px]" src="/img/title_sorry.svg" alt="" />
-            <div className="text-center text-[24px] text-[#3E1914]">目前此頻道缺人中<br/>宇宙將為你隨機配對</div>
+            <div className="text-center text-[24px] text-[#3E1914]">此頻道目前缺人中<br/>宇宙將為你隨機配對</div>
             <div className="my-8 flex justify-center">
               <button
           className="flex h-[64px] w-[176px] items-center justify-center rounded-full bg-[#DCDD9B] text-[32px] font-bold text-[#3E1914] active:bg-[#3E1914] active:text-[#DCDD9B]"
