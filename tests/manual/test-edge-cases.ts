@@ -115,7 +115,7 @@ async function scenario2_AdminApprovalFlow() {
         giftType: 'A',
         message: 'Admin 測試',
         name: '測試用戶',
-        assignedGridId: 122,  // gridNumber=2
+        assignedGridId: 182,  // gridNumber=2
       }),
     })
 
@@ -133,11 +133,11 @@ async function scenario2_AdminApprovalFlow() {
     const checkGrid = await fetch(`${BASE_URL}/api/grids/preview?giftType=A&preferSameType=null&excludeLast=0`)
     const gridData = await checkGrid.json()
 
-    const grid122 = gridData.availableGrids?.find((g: any) => g.id === 122)
-    if (grid122) {
-      addResult('場景2.2', false, '格子 122 應該被鎖定，但仍在 availableGrids 中')
+    const grid182 = gridData.availableGrids?.find((g: any) => g.id === 182)
+    if (grid182) {
+      addResult('場景2.2', false, '格子 182 應該被鎖定，但仍在 availableGrids 中')
     } else {
-      addResult('場景2.2', true, '格子 122 已鎖定，不在可用列表中')
+      addResult('場景2.2', true, '格子 182 已鎖定，不在可用列表中')
     }
 
     // 2.3 管理員審核通過（假設列印成功）
@@ -168,11 +168,11 @@ async function scenario2_AdminApprovalFlow() {
     const checkGridAfter = await fetch(`${BASE_URL}/api/grids/preview?giftType=A&preferSameType=null&excludeLast=0`)
     const gridDataAfter = await checkGridAfter.json()
 
-    const grid122After = gridDataAfter.availableGrids?.find((g: any) => g.id === 122)
-    if (grid122After) {
-      addResult('場景2.5', true, '格子 122 已釋放，重新出現在可用列表中')
+    const grid182After = gridDataAfter.availableGrids?.find((g: any) => g.id === 182)
+    if (grid182After) {
+      addResult('場景2.5', true, '格子 182 已釋放，重新出現在可用列表中')
     } else {
-      addResult('場景2.5', false, '格子 122 應該已釋放，但不在可用列表中')
+      addResult('場景2.5', false, '格子 182 應該已釋放，但不在可用列表中')
     }
 
   } catch (error: any) {
@@ -232,7 +232,7 @@ async function scenario4_PollingRecovery() {
         giftType: 'C',
         message: '輪詢測試',
         name: '輪詢用戶',
-        assignedGridId: 123,  // gridNumber=3
+        assignedGridId: 183,  // gridNumber=3
       }),
     })
 
@@ -288,7 +288,7 @@ async function scenario5_OrphanPending() {
         giftType: 'B',
         message: '孤兒測試',
         name: '孤兒用戶',
-        assignedGridId: 124,  // gridNumber=4
+        assignedGridId: 184,  // gridNumber=4
       }),
     })
 
@@ -301,11 +301,11 @@ async function scenario5_OrphanPending() {
     const checkGrid = await fetch(`${BASE_URL}/api/grids/preview?giftType=B&preferSameType=null&excludeLast=0`)
     const gridData = await checkGrid.json()
 
-    const grid124 = gridData.availableGrids?.find((g: any) => g.id === 124)
-    if (!grid124) {
-      addResult('場景5.2', true, '格子 124 已鎖定（不在可用列表）')
+    const grid184 = gridData.availableGrids?.find((g: any) => g.id === 184)
+    if (!grid184) {
+      addResult('場景5.2', true, '格子 184 已鎖定（不在可用列表）')
     } else {
-      addResult('場景5.2', false, '格子 124 應該被鎖定，但仍在可用列表中')
+      addResult('場景5.2', false, '格子 184 應該被鎖定，但仍在可用列表中')
     }
 
     // 5.3 檢查全局鎖定
@@ -343,7 +343,7 @@ async function scenario6_RejectConsistency() {
         giftType: 'C',
         message: '拒絕測試',
         name: '拒絕用戶',
-        assignedGridId: 125,  // gridNumber=5
+        assignedGridId: 185,  // gridNumber=5
       }),
     })
 
@@ -355,12 +355,12 @@ async function scenario6_RejectConsistency() {
     // 6.2 查詢格子當前狀態
     const checkBefore = await fetch(`${BASE_URL}/api/grids/preview?giftType=C&preferSameType=null&excludeLast=0`)
     const dataBefore = await checkBefore.json()
-    const grid125Before = dataBefore.availableGrids?.find((g: any) => g.id === 125)
+    const grid185Before = dataBefore.availableGrids?.find((g: any) => g.id === 185)
 
-    if (!grid125Before) {
-      addResult('場景6.2', true, '拒絕前：格子 125 已鎖定')
+    if (!grid185Before) {
+      addResult('場景6.2', true, '拒絕前：格子 185 已鎖定')
     } else {
-      addResult('場景6.2', false, '拒絕前：格子 125 應該鎖定但沒有')
+      addResult('場景6.2', false, '拒絕前：格子 185 應該鎖定但沒有')
     }
 
     // 6.3 拒絕
@@ -380,19 +380,19 @@ async function scenario6_RejectConsistency() {
     // 6.4 驗證格子已釋放
     const checkAfter = await fetch(`${BASE_URL}/api/grids/preview?giftType=C&preferSameType=null&excludeLast=0`)
     const dataAfter = await checkAfter.json()
-    const grid125After = dataAfter.availableGrids?.find((g: any) => g.id === 125)
+    const grid185After = dataAfter.availableGrids?.find((g: any) => g.id === 185)
 
-    if (grid125After) {
-      addResult('場景6.4', true, '拒絕後：格子 125 已釋放，重新可用')
+    if (grid185After) {
+      addResult('場景6.4', true, '拒絕後：格子 185 已釋放，重新可用')
     } else {
-      addResult('場景6.4', false, '拒絕後：格子 125 應該釋放但仍不可用')
+      addResult('場景6.4', false, '拒絕後：格子 185 應該釋放但仍不可用')
     }
 
     // 6.5 驗證 Grid 的 currentGiftType 沒有改變
     // 注意：拒絕不應該改變 currentGiftType，因為禮物沒有真正進入格子
-    if (grid125After) {
-      const originalGiftType = grid125Before?.currentGiftType || grid125After.previousSubmission?.giftType
-      addResult('場景6.5', true, `Grid currentGiftType 保持不變（${grid125After.currentGiftType}）`)
+    if (grid185After) {
+      const originalGiftType = grid185Before?.currentGiftType || grid185After.previousSubmission?.giftType
+      addResult('場景6.5', true, `Grid currentGiftType 保持不變（${grid185After.currentGiftType}）`)
     }
 
   } catch (error: any) {

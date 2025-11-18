@@ -65,6 +65,7 @@ export default function Result(props: IProps) {
         pendingId: data.pendingId,
         isLoading: false,
       })
+
     } catch (error: any) {
       alert(error.message)
       setGameState({ isLoading: false })
@@ -80,22 +81,21 @@ export default function Result(props: IProps) {
     }
   }, [])
 
-  // 輪詢審核狀態
+  // 統一的全局鎖定狀態輪詢
   useEffect(() => {
-    if (!gameState.pendingId) {
-      // 重置錯誤狀態
-      errorCountRef.current = 0
-      setPollingError(null)
+
+    // 只有在「有 drawResult 但沒 pendingId」時不輪詢（正在提交中）
+    if (gameState.drawResult && !gameState.pendingId) {
       return
     }
 
-    const checkStatus = async () => {
+    const checkGlobalLock = async () => {
       try {
-        const response = await fetch(`/api/pending/${gameState.pendingId}`)
+        const response = await fetch('/api/pending/check')
         const data = await response.json()
 
-        if (data.status === 'processed') {
-          // 審核完成（通過或拒絕），重置流程回到首頁
+        if (!data.hasPending) {
+          // 全局鎖定已解除（所有審核都完成），返回首頁
           errorCountRef.current = 0
           setPollingError(null)
           setGameState({
@@ -107,14 +107,15 @@ export default function Result(props: IProps) {
             name: '',
             lineId: '',
             instagram: '',
+            estimatedParticipantNo: null,
           })
         } else {
-          // 成功獲取狀態，重置錯誤計數
+          // 仍有 pending，重置錯誤計數
           errorCountRef.current = 0
           setPollingError(null)
         }
       } catch (error) {
-        console.error('檢查審核狀態失敗:', error)
+        console.error('檢查全局鎖定狀態失敗:', error)
         errorCountRef.current += 1
 
         if (errorCountRef.current >= 3) {
@@ -126,17 +127,17 @@ export default function Result(props: IProps) {
     }
 
     // 立即檢查一次
-    checkStatus()
+    checkGlobalLock()
 
     // 每 2 秒輪詢一次
-    const interval = setInterval(checkStatus, 2000)
+    const interval = setInterval(checkGlobalLock, 2000)
 
     return () => {
       clearInterval(interval)
       errorCountRef.current = 0
       setPollingError(null)
     }
-  }, [gameState.pendingId])
+  }, [setGameState, gameState.pendingId, gameState.drawResult])
 
   return <div className={twMerge('min-h-full flex flex-col', className)}>
     <div className="container pt-10">
@@ -161,7 +162,7 @@ export default function Result(props: IProps) {
             </div>
             <div className="flex flex-col items-center">
               {
-                pollingError && gameState.pendingId
+                pollingError
                   ? <div className="mt-4 text-center text-[20px] font-semibold text-red-600">
                     { pollingError }
                   </div>
