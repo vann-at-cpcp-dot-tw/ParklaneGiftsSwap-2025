@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+const STORAGE_KEY = 'guard_validated_at'
+const EXPIRY_MS = 24 * 60 * 60 * 1000 // 24 小時
 
 interface IProps {
   onValidated: () => void
@@ -11,6 +14,28 @@ export default function Guard(props: IProps) {
 
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isChecking, setIsChecking] = useState(true) // 檢查 localStorage 中
+
+  // 檢查 localStorage 是否有有效的驗證
+  useEffect(() => {
+    const validatedAt = localStorage.getItem(STORAGE_KEY)
+
+    if (validatedAt) {
+      const timestamp = parseInt(validatedAt, 10)
+      const now = Date.now()
+
+      if (now - timestamp < EXPIRY_MS) {
+        // 尚未過期，自動通過
+        onValidated()
+        return
+      } else {
+        // 已過期，清除
+        localStorage.removeItem(STORAGE_KEY)
+      }
+    }
+
+    setIsChecking(false)
+  }, [onValidated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,6 +53,8 @@ export default function Guard(props: IProps) {
       const data = await response.json()
 
       if (data.success) {
+        // 儲存驗證時間到 localStorage
+        localStorage.setItem(STORAGE_KEY, Date.now().toString())
         onValidated()
       } else {
         alert('驗證失敗')
@@ -39,6 +66,11 @@ export default function Guard(props: IProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // 檢查中不顯示任何內容（避免閃爍）
+  if (isChecking) {
+    return null
   }
 
   return <main className="flex h-full flex-col">
