@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface GiftForm {
   giftType: 'A' | 'B' | 'C'
@@ -10,9 +10,18 @@ interface GiftForm {
   instagram: string
 }
 
+interface GridInfo {
+  id: number
+  gridNumber: number
+  currentGiftType: string | null
+  status: string
+  disabled: boolean
+}
+
 export default function AdminPage() {
   const [showManualForm, setShowManualForm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [grids, setGrids] = useState<GridInfo[]>([])
   const [gifts, setGifts] = useState<GiftForm[]>(
     Array.from({ length: 30 }, () => ({
       giftType: 'A',
@@ -22,6 +31,46 @@ export default function AdminPage() {
       instagram: '',
     }))
   )
+
+  // 載入格子列表
+  const fetchGrids = async () => {
+    try {
+      const response = await fetch('/api/admin/grids')
+      const data = await response.json()
+      if (response.ok && data.grids) {
+        setGrids(data.grids)
+      }
+    } catch (error) {
+      console.error('載入格子列表失敗:', error)
+    }
+  }
+
+  // 初始載入
+  useEffect(() => {
+    fetchGrids()
+  }, [])
+
+  // 切換格子禁用狀態
+  const handleToggleDisabled = async (gridId: number) => {
+    try {
+      const response = await fetch(`/api/admin/grids/${gridId}`, {
+        method: 'PUT',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || '切換失敗')
+      }
+
+      // 更新本地狀態
+      setGrids(grids.map(g =>
+        g.id === gridId ? { ...g, disabled: data.grid.disabled } : g
+      ))
+    } catch (error: any) {
+      alert(error.message)
+    }
+  }
 
   // 隨機初始化
   const handleRandomInit = async () => {
@@ -173,6 +222,61 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
+
+      {/* 格子管理區 */}
+      {grids.length > 0 && (
+        <div style={{ marginBottom: '40px' }}>
+          <h2>格子管理</h2>
+          <p style={{ color: '#666', marginBottom: '15px' }}>
+            禁用的格子不會參與抽選。如果某個格子物理性損壞，可以在此禁用。
+          </p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(6, 1fr)',
+              gap: '10px',
+              marginTop: '15px',
+            }}
+          >
+            {grids.map((grid) => (
+              <div
+                key={grid.id}
+                style={{
+                  padding: '10px',
+                  border: `2px solid ${grid.disabled ? '#f44336' : '#4CAF50'}`,
+                  borderRadius: '8px',
+                  backgroundColor: grid.disabled ? '#ffebee' : '#e8f5e9',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                  #{grid.gridNumber}
+                </div>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                  {grid.currentGiftType || '-'} | {grid.status === 'locked' ? '鎖定' : '可用'}
+                </div>
+                <button
+                  onClick={() => handleToggleDisabled(grid.id)}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '12px',
+                    backgroundColor: grid.disabled ? '#4CAF50' : '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {grid.disabled ? '啟用' : '禁用'}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: '15px', color: '#666', fontSize: '14px' }}>
+            已禁用：{grids.filter(g => g.disabled).length} 個格子
+          </div>
+        </div>
+      )}
 
       {/* 手動輸入表單 */}
       {showManualForm && (

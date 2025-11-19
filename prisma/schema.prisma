@@ -16,6 +16,7 @@ model Grid {
   currentGiftType      String?      // 'A' | 'B' | 'C' | 'default'
   currentParticipantId Int?         // 當前格子內禮物的擁有者 ID
   status               String       @default("available") // 'available' | 'locked'
+  disabled             Boolean      @default(false) // 管理員禁用（不參與抽選）
   updatedAt            DateTime     @updatedAt
 
   submissions          Submission[]
@@ -23,6 +24,7 @@ model Grid {
 
   @@index([status])
   @@index([currentGiftType, status])
+  @@index([disabled])
 }
 
 // 提交表：參加者記錄

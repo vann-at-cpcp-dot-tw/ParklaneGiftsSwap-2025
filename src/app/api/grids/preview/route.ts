@@ -51,6 +51,7 @@ export async function GET(request: Request) {
     // 1. 根據用戶選擇構建查詢條件（加入排除倒數 X 個格子）
     let whereCondition: any = {
       status: 'available',
+      disabled: false, // 排除被管理員禁用的格子
       // 排除倒數 X 個被抽中的格子（如果有的話）
       ...(excludedGridIds.length > 0 ? { id: { notIn: excludedGridIds } } : {})
     }
@@ -76,6 +77,7 @@ export async function GET(request: Request) {
       availableGrids = await prisma.grid.findMany({
         where: {
           status: 'available',
+          disabled: false, // 排除被管理員禁用的格子
           ...(excludedGridIds.length > 0 ? { id: { notIn: excludedGridIds } } : {})
         }
       })
@@ -92,6 +94,7 @@ export async function GET(request: Request) {
       availableGrids = await prisma.grid.findMany({
         where: {
           status: 'available',
+          disabled: false, // 排除被管理員禁用的格子
           ...(reducedExcludedGridIds.length > 0 ? { id: { notIn: reducedExcludedGridIds } } : {})
         }
       })
@@ -102,7 +105,10 @@ export async function GET(request: Request) {
     // 第三層降級：如果還是沒有（所有格子都被佔用），返回錯誤
     if (availableGrids.length === 0) {
       availableGrids = await prisma.grid.findMany({
-        where: { status: 'available' }
+        where: {
+          status: 'available',
+          disabled: false // 排除被管理員禁用的格子
+        }
       })
     }
 
