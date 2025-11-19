@@ -44,6 +44,14 @@ export async function POST(request: Request) {
         )
       }
 
+      // 檢查格子是否被禁用
+      if (selectedGrid.disabled) {
+        return NextResponse.json(
+          { error: '格子已被禁用，請重新抽選', retryable: true },
+          { status: 409 }
+        )
+      }
+
       // 檢查是否符合偏好（用於記錄）
       if (preferSameType === true && selectedGrid.currentGiftType !== giftType) {
         matchedPreference = false
@@ -116,6 +124,11 @@ export async function POST(request: Request) {
         throw new Error('格子已被佔用，請重試')
       }
 
+      // 檢查格子是否被禁用
+      if (grid.disabled) {
+        throw new Error('格子已被禁用，請重新抽選')
+      }
+
       // 鎖定格子
       await tx.grid.update({
         where: { id: selectedGrid.id },
@@ -171,7 +184,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('創建參加記錄失敗:', error)
 
-    if (error.message === '格子已被佔用，請重試') {
+    if (error.message === '格子已被佔用，請重試' || error.message === '格子已被禁用，請重新抽選') {
       return NextResponse.json(
         { error: error.message, retryable: true },
         { status: 409 }

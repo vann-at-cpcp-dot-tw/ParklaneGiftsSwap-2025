@@ -30,6 +30,20 @@ export async function PUT(
       )
     }
 
+    // 如果要禁用格子，檢查是否有 PendingSubmission 正在使用
+    if (!grid.disabled) {
+      const pendingSubmission = await prisma.pendingSubmission.findFirst({
+        where: { assignedGridId: gridId },
+      })
+
+      if (pendingSubmission) {
+        return NextResponse.json(
+          { error: `格子 ${grid.gridNumber} 正在審核中，請先處理審核後再禁用` },
+          { status: 409 }
+        )
+      }
+    }
+
     // 切換禁用狀態
     const updatedGrid = await prisma.grid.update({
       where: { id: gridId },
