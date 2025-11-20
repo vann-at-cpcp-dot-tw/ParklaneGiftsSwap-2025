@@ -74,16 +74,51 @@ export function usePrint() {
       return
     }
 
+    let canvas: HTMLCanvasElement | null = null
+    let flippedCanvas: HTMLCanvasElement | null = null
+
     try {
       // 使用 html2canvas 將 HTML 轉成 canvas（縮小到 0.5 倍）
-      const canvas = await html2canvas(receiptRef.current, {
+      canvas = await html2canvas(receiptRef.current, {
         backgroundColor: '#ffffff',
         scale: 0.5,
         logging: false,
       })
 
-      // 獲取 canvas 的 2D context（Epson SDK 需要）
-      const context = canvas.getContext('2d')
+      // 創建翻轉的 canvas（上下顛倒 180 度）
+      flippedCanvas = document.createElement('canvas')
+      flippedCanvas.width = canvas.width
+      flippedCanvas.height = canvas.height
+
+      const flipCtx = flippedCanvas.getContext('2d')
+      if (!flipCtx) {
+        throw new Error('無法獲取 canvas context（翻轉）')
+      }
+
+      // 旋轉 180 度
+      flipCtx.translate(canvas.width, canvas.height)
+      flipCtx.rotate(Math.PI)
+      flipCtx.drawImage(canvas, 0, 0)
+
+      // ===== 測試預覽（暫時） =====
+      // const previewUrl = flippedCanvas.toDataURL('image/png')
+      // const previewWindow = window.open('', '_blank')
+      // if (previewWindow) {
+      //   previewWindow.document.write(`
+      //     <html>
+      //       <head><title>列印預覽（180度旋轉）</title></head>
+      //       <body style="margin:0;padding:20px;background:#ccc;">
+      //         <img src="${previewUrl}" style="max-width:100%;border:2px solid #000;" />
+      //       </body>
+      //     </html>
+      //   `)
+      // }
+      // alert('預覽已開啟，請檢查新視窗')
+      // return
+      // ===== 測試預覽結束 =====
+
+      // 獲取翻轉後 canvas 的 2D context（Epson SDK 需要）
+      const context = flippedCanvas.getContext('2d')
       if (!context) {
         throw new Error('無法獲取 canvas context')
       }
@@ -150,6 +185,25 @@ export function usePrint() {
       console.error('列印失敗:', error)
       alert(`列印失敗：${error.message}\n\n可能原因：\n1. 印表機未連線\n2. 印表機 IP 不正確\n3. 印表機未啟用 ePOS Print\n4. SDK 未正確載入`)
       return undefined
+    } finally {
+      // 顯式清理 canvas 記憶體，避免累積
+      if (canvas) {
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+        }
+        canvas.width = 0
+        canvas.height = 0
+      }
+
+      if (flippedCanvas) {
+        const ctx = flippedCanvas.getContext('2d')
+        if (ctx) {
+          ctx.clearRect(0, 0, flippedCanvas.width, flippedCanvas.height)
+        }
+        flippedCanvas.width = 0
+        flippedCanvas.height = 0
+      }
     }
   }
 
