@@ -33,7 +33,7 @@ export const PRINT_INFO = {
   },
   giftType: {
     A: '派對 A 頻',
-    B: '溫心 B 頻',
+    B: '暖心 B 頻',
     C: '隨性 C 頻',
   }
 }
