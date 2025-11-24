@@ -53,6 +53,7 @@ export async function POST(
       where: {
         isDeleted: false,
         isInitialGift: false,  // 必须排除初始礼物
+        realParticipantNo: { not: null },  // 排除 NULL 值
       },
       orderBy: { realParticipantNo: 'desc' },
     })
