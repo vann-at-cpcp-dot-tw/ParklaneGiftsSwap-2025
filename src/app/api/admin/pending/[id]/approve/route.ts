@@ -51,7 +51,6 @@ export async function POST(
     // 4. 獲取下一個真實參加者編號
     const lastRealSubmission = await prisma.submission.findFirst({
       where: {
-        isDeleted: false,
         isInitialGift: false,  // 必须排除初始礼物
         realParticipantNo: { not: null },  // 排除 NULL 值
       },
